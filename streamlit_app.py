@@ -158,8 +158,7 @@ if generate_button:
                 
                 # Process each section with print suppression
                 for i, (section, qinfo) in enumerate(queries.items()):
-                    search_type = "site-restricted" if company_website else "unrestricted"
-                    status_text.text(f"Processing {section.replace('_', ' ').title()} ({search_type})...")
+                    status_text.text(f"Processing {section.replace('_', ' ').title()}...")
                     
                     # Suppress print statements from imported functions
                     with contextlib.redirect_stdout(io.StringIO()):

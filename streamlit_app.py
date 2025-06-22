@@ -6,10 +6,18 @@ from datetime import datetime
 # Add the current directory to Python path to import battlecard_main functions
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Set environment variables from Streamlit secrets
+if st.secrets:
+    os.environ['GOOGLE_API_KEY'] = st.secrets.get('GOOGLE_API_KEY', '')
+    os.environ['GOOGLE_API_KEY_2'] = st.secrets.get('GOOGLE_API_KEY_2', '')
+    os.environ['GOOGLE_CSE_ID'] = st.secrets.get('GOOGLE_CSE_ID', '')
+    os.environ['GOOGLE_CSE_ID_2'] = st.secrets.get('GOOGLE_CSE_ID_2', '')
+    os.environ['LLM_API_KEY'] = st.secrets.get('LLM_API_KEY', '')
+
 # Import functions from battlecard_main
 from battlecard_main import (
     get_queries, get_prompts, google_search, 
-    call_llm_with_retry, deduplicate_sections
+    call_llm_with_retry, deduplicate_sections, validate_environment
 )
 
 # Set page config
@@ -23,6 +31,13 @@ st.set_page_config(
 st.title("📊 Battlecard Generator")
 st.markdown("Generate comprehensive battlecards for any company using AI-powered web search and analysis.")
 
+# Debug information (only show in development)
+if st.secrets:
+    with st.expander("🔧 Debug Info (Environment Variables)"):
+        st.write("**Google API Key:**", "✅ Set" if st.secrets.get('GOOGLE_API_KEY') else "❌ Not Set")
+        st.write("**Google CSE ID:**", "✅ Set" if st.secrets.get('GOOGLE_CSE_ID') else "❌ Not Set")
+        st.write("**LLM API Key:**", "✅ Set" if st.secrets.get('LLM_API_KEY') else "❌ Not Set")
+
 # Sidebar for inputs
 with st.sidebar:
     st.header("Company Information")
@@ -31,14 +46,18 @@ with st.sidebar:
     
     # Environment variables setup
     st.header("API Configuration")
-    st.info("Make sure your API keys are set as environment variables:")
-    st.code("""
+    if st.secrets:
+        st.success("✅ API keys configured via Streamlit secrets")
+    else:
+        st.warning("⚠️ API keys not found in Streamlit secrets")
+        st.info("Make sure your API keys are set in Streamlit Cloud settings:")
+        st.code("""
 GOOGLE_API_KEY=your_google_api_key
 GOOGLE_API_KEY_2=your_second_google_api_key
 GOOGLE_CSE_ID=your_cse_id
 GOOGLE_CSE_ID_2=your_second_cse_id
 LLM_API_KEY=your_groq_api_key
-    """)
+        """)
     
     generate_button = st.button("🚀 Generate Battlecard", type="primary")
 
@@ -47,6 +66,11 @@ if generate_button:
     if not company_name or not company_website:
         st.error("Please enter both company name and website.")
     else:
+        # Validate environment variables first
+        if not validate_environment():
+            st.error("❌ Missing required API keys. Please check your Streamlit Cloud settings.")
+            st.stop()
+        
         try:
             with st.spinner("Generating battlecard... This may take a few minutes."):
                 # Get queries and prompts

@@ -221,6 +221,8 @@
 - **Interface Simplification**: Removed website search type information messages and processing status details for cleaner user flow
 - **Prompt Improvements**: Enhanced Recent News and M&A prompts to prevent misclassification of acquisition activities, including comprehensive company role specifications for M&A
 - **Leadership Detection**: Improved leadership changes search query and prompts to better capture CEO transitions, interim appointments, and prevent outdated leadership information in company overview
+- **M&A Detection**: Enhanced M&A search query and prompt to better capture product acquisitions, asset purchases, and improve deduplication logic with debugging
+- **Text Corrections**: Fixed typo in M&A prompt response message ("Merger & Acquisitions" → "Mergers & Acquisitions")
 
 ### Technical Details
 - **Query Generation**: Site restriction is now applied at query level: `site:example.com` if provided, empty string if not

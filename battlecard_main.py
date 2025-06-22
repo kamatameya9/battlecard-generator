@@ -92,7 +92,7 @@ def get_queries(company_name, company_website=None):
             'daterestrict': 'y2'
         },
         'mergers_acquisitions': {
-            'query': f'"{company_name}" {site_restriction}(merger OR acquisition OR acquired OR acquired by OR M&A OR stake OR equity OR buyout OR merger announcement OR acquisition announcement OR investment OR funding round OR deal closed)',
+            'query': f'"{company_name}" {site_restriction}(merger OR acquisition OR acquired OR acquired by OR M&A OR stake OR equity OR buyout OR merger announcement OR acquisition announcement OR investment OR funding round OR deal closed OR purchases OR acquires OR buying OR sold OR divestiture OR strategic investment OR joint venture OR partnership deal)',
             'daterestrict': 'y3'
         },
         'company_overview': {
@@ -135,9 +135,10 @@ You are an expert business analyst. Using only the provided web search snippets,
 - Company acquisitions (buying other companies)
 - Being acquired by another company
 - Merger announcements or completed mergers
-- Asset purchases or sales
+- Asset purchases or sales (including product lines, technologies, intellectual property)
 - Strategic investments or equity stakes
 - Joint ventures or partnerships that involve ownership changes
+- Product acquisitions (buying specific products, brands, or technologies from other companies)
 
 For each M&A activity, provide up to 5 bullet points with:
 - Names of companies involved and their roles (buyer/seller/target)
@@ -146,7 +147,9 @@ For each M&A activity, provide up to 5 bullet points with:
 - Date of the citation/source
 - The source link
 
-Only include clear M&A transactions. If no information is found, respond with "No recent Merger & Acquisitions found." {cluster_instruction} {base_warning}
+IMPORTANT: Be thorough in identifying all M&A activities, including smaller acquisitions of products, technologies, or assets. If you find any mention of acquisitions, purchases, or deals, include them in this section.
+
+Only include clear M&A transactions. If no information is found, respond with "No recent Mergers & Acquisitions found." {cluster_instruction} {base_warning}
 """,
         'company_overview': f"""
 You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, write a detailed company overview. Include geographical presence, subsidiaries, parent company (if any), history, services and solutions, and strategic focus. 
@@ -300,11 +303,25 @@ def deduplicate_sections(sections):
     # Remove news items that have links in leadership or mergers
     news_lines = news.split('\n')
     filtered_news_lines = []
+    removed_items = []
+    
     for line in news_lines:
-        if not any(link in line for link in all_exclude_links):
+        # Check if this line contains any links that appear in leadership or mergers
+        line_has_excluded_link = any(link in line for link in all_exclude_links)
+        
+        if line_has_excluded_link:
+            removed_items.append(line.strip())
+        else:
             filtered_news_lines.append(line)
+    
     filtered_news = '\n'.join(filtered_news_lines)
     sections['recent_news'] = filtered_news
+    
+    # If we removed items but M&A section is empty, there might be an issue
+    if removed_items and not mergers_links:
+        print(f"Warning: Removed {len(removed_items)} items from Recent News that should be in M&A, but M&A section appears empty.")
+        print("Removed items:", removed_items[:3])  # Show first 3 items
+    
     return sections
 
 def main():

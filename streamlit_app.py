@@ -2,6 +2,8 @@ import streamlit as st
 import os
 import sys
 from datetime import datetime
+import contextlib
+import io
 
 # Add the current directory to Python path to import battlecard_main functions
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -142,9 +144,6 @@ if generate_button:
         # Handle optional company website
         if not company_website:
             company_website = None
-            st.info("ℹ️ No website provided - using unrestricted search across all websites.")
-        else:
-            st.info(f"ℹ️ Using site-restricted search for: {company_website}")
         
         try:
             with st.spinner("Generating battlecard... This may take a few minutes."):
@@ -157,34 +156,36 @@ if generate_button:
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 
-                # Process each section
+                # Process each section with print suppression
                 for i, (section, qinfo) in enumerate(queries.items()):
                     search_type = "site-restricted" if company_website else "unrestricted"
                     status_text.text(f"Processing {section.replace('_', ' ').title()} ({search_type})...")
                     
-                    # If we have a website, try restricted search first, then fallback to unrestricted
-                    if company_website:
-                        restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
-                        
-                        # Only do unrestricted search if we have some restricted results but need more
-                        if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
-                            status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
-                            unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
-                            unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
-                            # Combine results, prioritizing restricted ones
-                            all_snippets = restricted_snippets + unrestricted_snippets
+                    # Suppress print statements from imported functions
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        # If we have a website, try restricted search first, then fallback to unrestricted
+                        if company_website:
+                            restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+                            
+                            # Only do unrestricted search if we have some restricted results but need more
+                            if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
+                                status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
+                                unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
+                                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
+                                # Combine results, prioritizing restricted ones
+                                all_snippets = restricted_snippets + unrestricted_snippets
+                            else:
+                                all_snippets = restricted_snippets
                         else:
-                            all_snippets = restricted_snippets
-                    else:
-                        # No website provided, just do unrestricted search
-                        all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
-                    
-                    # Generate summary
-                    if len(all_snippets) == 0:
-                        sections[section] = f"No information found for {section.replace('_', ' ').title()}."
-                    else:
-                        summary = call_llm_with_retry(prompts[section], all_snippets)
-                        sections[section] = summary
+                            # No website provided, just do unrestricted search
+                            all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+                        
+                        # Generate summary
+                        if len(all_snippets) == 0:
+                            sections[section] = f"No information found for {section.replace('_', ' ').title()}."
+                        else:
+                            summary = call_llm_with_retry(prompts[section], all_snippets)
+                            sections[section] = summary
                     
                     # Update progress
                     progress_bar.progress((i + 1) / len(queries))

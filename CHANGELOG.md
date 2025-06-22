@@ -217,6 +217,8 @@
 - **Streamlit Layout**: Fixed responsive layout to prevent page shifting when sidebar is open after content generation
 - **Page Icon**: Updated Streamlit page icon to display proper search/research icon instead of chart icon
 - **UI Cleanup**: Removed debug information expander and API configuration section from Streamlit app for cleaner interface
+- **Output Cleanup**: Suppressed print statements from imported functions in Streamlit app for cleaner user experience
+- **Interface Simplification**: Removed website search type information messages for cleaner user flow
 
 ### Technical Details
 - **Query Generation**: Site restriction is now applied at query level: `site:example.com` if provided, empty string if not

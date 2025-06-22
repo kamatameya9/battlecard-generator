@@ -23,14 +23,20 @@ from battlecard_main import (
 # Set page config
 st.set_page_config(
     page_title="Battlecard Generator",
-    page_icon="🔍",
+    page_icon="🔬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Add custom CSS for better error message handling
+# Custom CSS for better layout and text wrapping
 st.markdown("""
 <style>
+    /* Prevent horizontal scrolling */
+    .stApp {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+    
     /* Wrap long error messages and prevent horizontal scrolling */
     .stAlert {
         word-wrap: break-word;
@@ -43,10 +49,9 @@ st.markdown("""
         word-break: break-word;
         white-space: pre-wrap;
         max-width: 100%;
-        overflow-x: hidden;
     }
     
-    /* Ensure all text content wraps properly */
+    /* Make text wrap properly */
     .stMarkdown {
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -68,60 +73,59 @@ st.markdown("""
         max-width: 100%;
     }
     
-    /* Keep sidebar always visible */
+    /* Responsive sidebar - don't force fixed width */
     .css-1d391kg {
-        min-width: 300px !important;
+        min-width: 250px !important;
+        max-width: 350px !important;
     }
     
-    /* Ensure sidebar doesn't collapse */
+    /* Ensure sidebar doesn't collapse but allow flexibility */
     .css-1lcbmhc {
-        min-width: 300px !important;
+        min-width: 250px !important;
+        max-width: 350px !important;
     }
     
-    /* Main content area */
+    /* Main content area - responsive padding */
     .main .block-container {
-        padding-left: 320px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        max-width: 100%;
     }
     
-    /* Sidebar styling */
-    .css-1d391kg .css-1lcbmhc {
-        min-width: 300px !important;
-        width: 300px !important;
+    /* When sidebar is present, adjust main content */
+    @media (min-width: 768px) {
+        .main .block-container {
+            padding-left: 2rem;
+        }
+    }
+    
+    /* Ensure content doesn't overflow */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: nowrap;
+        background-color: transparent;
+    }
+    
+    /* Better spacing for tabs */
+    .stTabs [role="tablist"] {
+        gap: 2px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # Title and description
-st.title("📊 Battlecard Generator")
+st.title("🔬 Battlecard Generator")
 st.markdown("Generate comprehensive battlecards for any company using AI-powered web search and analysis.")
-
-# Debug information (only show in development)
-if st.secrets:
-    with st.expander("🔧 Debug Info (Environment Variables)"):
-        st.write("**Google API Key:**", "✅ Set" if st.secrets.get('GOOGLE_API_KEY') else "❌ Not Set")
-        st.write("**Google CSE ID:**", "✅ Set" if st.secrets.get('GOOGLE_CSE_ID') else "❌ Not Set")
-        st.write("**LLM API Key:**", "✅ Set" if st.secrets.get('LLM_API_KEY') else "❌ Not Set")
 
 # Sidebar for inputs
 with st.sidebar:
     st.header("Company Information")
     company_name = st.text_input("Company Name", placeholder="e.g., Apple Inc.")
     company_website = st.text_input("Company Website (Optional)", placeholder="e.g., apple.com", help="Leave empty for unrestricted search across all websites")
-    
-    # Environment variables setup
-    st.header("API Configuration")
-    if st.secrets:
-        st.success("✅ API keys configured via Streamlit secrets")
-    else:
-        st.warning("⚠️ API keys not found in Streamlit secrets")
-        st.info("Make sure your API keys are set in Streamlit Cloud settings:")
-        st.code("""
-GOOGLE_API_KEY=your_google_api_key
-GOOGLE_API_KEY_2=your_second_google_api_key
-GOOGLE_CSE_ID=your_cse_id
-GOOGLE_CSE_ID_2=your_second_cse_id
-LLM_API_KEY=your_groq_api_key
-        """)
     
     generate_button = st.button("🚀 Generate Battlecard", type="primary")
 

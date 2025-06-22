@@ -214,6 +214,9 @@
 - **Search Strategy**: Enhanced to use site-restricted search first, then fallback to unrestricted when needed (< 10 results)
 - **API Models**: Updated FastAPI Pydantic models to make `company_website` optional
 - **Form Validation**: Updated all web apps to only require company name, not website
+- **Streamlit Layout**: Fixed responsive layout to prevent page shifting when sidebar is open after content generation
+- **Page Icon**: Updated Streamlit page icon to display proper search/research icon instead of chart icon
+- **UI Cleanup**: Removed debug information expander and API configuration section from Streamlit app for cleaner interface
 
 ### Technical Details
 - **Query Generation**: Site restriction is now applied at query level: `site:example.com` if provided, empty string if not
@@ -221,5 +224,6 @@
 - **Search Type Indication**: Progress messages now show whether search is "site-restricted" or "unrestricted"
 - **Fallback Logic**: When website is provided but results are insufficient (< 10), automatically adds unrestricted search
 - **Backward Compatibility**: All existing functionality preserved when website is provided
+- **Responsive Design**: Removed fixed padding that caused layout shifts, implemented flexible sidebar sizing
 
 ## [Previous Entries] 

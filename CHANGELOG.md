@@ -219,6 +219,8 @@
 - **UI Cleanup**: Removed debug information expander and API configuration section from Streamlit app for cleaner interface
 - **Output Cleanup**: Suppressed print statements from imported functions in Streamlit app for cleaner user experience
 - **Interface Simplification**: Removed website search type information messages and processing status details for cleaner user flow
+- **Prompt Improvements**: Enhanced Recent News and M&A prompts to prevent misclassification of acquisition activities, including comprehensive company role specifications for M&A
+- **Leadership Detection**: Improved leadership changes search query and prompts to better capture CEO transitions, interim appointments, and prevent outdated leadership information in company overview
 
 ### Technical Details
 - **Query Generation**: Site restriction is now applied at query level: `site:example.com` if provided, empty string if not

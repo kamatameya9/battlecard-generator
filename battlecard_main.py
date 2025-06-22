@@ -88,7 +88,7 @@ def get_queries(company_name, company_website=None):
             'daterestrict': 'y2'
         },
         'leadership_changes': {
-            'query': f'"{company_name}" {site_restriction}(press release OR news OR announces OR appoints OR joins OR leaves OR steps down OR resigns OR named OR promoted OR hired OR fired OR leadership change OR CEO OR CFO OR CTO OR executive change OR management change OR board change OR president OR VP) -filetype:pdf',
+            'query': f'"{company_name}" {site_restriction}(press release OR news OR announces OR appoints OR joins OR leaves OR steps down OR resigns OR named OR promoted OR hired OR fired OR leadership change OR CEO OR CFO OR CTO OR COO OR CMO OR CHRO OR executive change OR management change OR board change OR president OR VP OR interim OR transition OR succession OR departure OR arrival OR new OR former OR current) -filetype:pdf',
             'daterestrict': 'y2'
         },
         'mergers_acquisitions': {
@@ -111,28 +111,49 @@ def get_prompts(company_name, company_website=None):
     
     return {
         'recent_news': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, summarize the most relevant news from the past 2 years. Focus on strategic initiatives, product launches, expansions, funding, partnerships, legal lawsuits, or any news relevant for business development officers. Do not include leadership changes or C-suite appointments or departures in this section. For each news item, provide a 2-3 line summary and include the source link and date. {cluster_instruction} {base_warning} If no information is found, respond with "No recent news found."
+You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, summarize the most relevant news from the past 2 years. Focus on strategic initiatives, product launches, expansions, funding, partnerships, legal lawsuits, or any news relevant for business development officers. Do not include leadership changes, C-suite appointments or departures, or any merger and acquisition (M&A) activities in this section - these belong in their respective dedicated sections. For each news item, provide a 2-3 line summary and include the source link and date. {cluster_instruction} {base_warning} If no information is found, respond with "No recent news found."
 """,
         'leadership_changes': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, identify C-Suite or leadership changes in the past 2 years. Only include a change if the snippet clearly states a change in an executive role (e.g., CEO, CFO, CTO, President, VP, or any title containing 'Chief'), and the source is a news article, press release, or official company announcement. Ignore snippets from legal documents, court filings, PDFs, or ambiguous mentions. If you are unsure, do not include the item. Do not speculate or hallucinate information. For each change, provide up to 5 bullet points with:
+You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, identify ALL C-Suite and leadership changes in the past 2 years. This includes:
+- CEO, CFO, CTO, COO, CMO, CHRO, and any other C-level positions
+- President, Vice President, Executive Vice President positions
+- Board of Directors changes
+- Any executive appointments, departures, promotions, or role changes
+- Interim leadership appointments
+
+For each change, provide up to 5 bullet points with:
 - Name of the individual
-- Their new or former title
-- Date or approximate time of the change
-- A brief 1-3 sentence summary of the context
+- Their new or former title and role
+- Date or approximate time of the change (be specific if possible)
+- A brief 1-3 sentence summary of the context and any notable details
 - The source link
-Only include changes within the last 24 months. {cluster_instruction} If no information is found, respond with "No recent leadership changes were found."
+
+Include changes even if they are interim appointments or if the individual has since left. If you are unsure about a change, include it with a note about uncertainty. Do not speculate or hallucinate information. {cluster_instruction} If no information is found, respond with "No recent leadership changes were found."
 """,
         'mergers_acquisitions': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, summarize all Mergers and Acquisitions (M&A) involving the company in the past 3 years. Include cases where the company is a buyer, seller, merger partner, interested party, stakeholder, or involved with banks/equity firms. For each, provide up to 5 bullet points with:
-- Names of companies involved and their roles
+You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, identify and summarize all Mergers and Acquisitions (M&A) involving the company in the past 3 years. Include instances where the company acted as Buyer, Seller, Merger participant, Interested Party, Stakeholder, or engaged with banks or equity firms. This includes:
+- Company acquisitions (buying other companies)
+- Being acquired by another company
+- Merger announcements or completed mergers
+- Asset purchases or sales
+- Strategic investments or equity stakes
+- Joint ventures or partnerships that involve ownership changes
+
+For each M&A activity, provide up to 5 bullet points with:
+- Names of companies involved and their roles (buyer/seller/target)
 - Date or planned date of the M&A
-- 1-3 sentence summary of the outcome
+- 1-3 sentence summary of the transaction details and outcome
 - Date of the citation/source
 - The source link
-{cluster_instruction} If no information is found, respond with "No recent Merger & Acquisitions found." {base_warning}
+
+Only include clear M&A transactions. If no information is found, respond with "No recent Merger & Acquisitions found." {cluster_instruction} {base_warning}
 """,
         'company_overview': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, write a detailed company overview. Include geographical presence, subsidiaries, parent company (if any), history, services and solutions, and strategic focus. Always use citations with dates and provide a source link for each fact. Only use reputable news, company, or industry sources. {cluster_instruction} {base_warning} If information is missing, do not speculate.
+You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, write a detailed company overview. Include geographical presence, subsidiaries, parent company (if any), history, services and solutions, and strategic focus. 
+
+IMPORTANT: Do not include current leadership or executive information in this section, as this information may be outdated. Leadership changes should be captured in the dedicated Leadership Changes section. Focus on company structure, business model, and operational details.
+
+Always use citations with dates and provide a source link for each fact. Only use reputable news, company, or industry sources. {cluster_instruction} {base_warning} If information is missing, do not speculate.
 """
     }
 

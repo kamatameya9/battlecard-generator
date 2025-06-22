@@ -23,9 +23,73 @@ from battlecard_main import (
 # Set page config
 st.set_page_config(
     page_title="Battlecard Generator",
-    page_icon="📊",
-    layout="wide"
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# Add custom CSS for better error message handling
+st.markdown("""
+<style>
+    /* Wrap long error messages and prevent horizontal scrolling */
+    .stAlert {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+    }
+    
+    /* Style for error messages */
+    .stAlert > div {
+        word-break: break-word;
+        white-space: pre-wrap;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    /* Ensure all text content wraps properly */
+    .stMarkdown {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+    }
+    
+    /* Code blocks should also wrap */
+    .stCodeBlock {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    
+    /* Debug info should wrap */
+    .streamlit-expanderContent {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+    }
+    
+    /* Keep sidebar always visible */
+    .css-1d391kg {
+        min-width: 300px !important;
+    }
+    
+    /* Ensure sidebar doesn't collapse */
+    .css-1lcbmhc {
+        min-width: 300px !important;
+    }
+    
+    /* Main content area */
+    .main .block-container {
+        padding-left: 320px;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg .css-1lcbmhc {
+        min-width: 300px !important;
+        width: 300px !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Title and description
 st.title("📊 Battlecard Generator")
@@ -42,7 +106,7 @@ if st.secrets:
 with st.sidebar:
     st.header("Company Information")
     company_name = st.text_input("Company Name", placeholder="e.g., Apple Inc.")
-    company_website = st.text_input("Company Website", placeholder="e.g., apple.com")
+    company_website = st.text_input("Company Website (Optional)", placeholder="e.g., apple.com", help="Leave empty for unrestricted search across all websites")
     
     # Environment variables setup
     st.header("API Configuration")
@@ -63,13 +127,20 @@ LLM_API_KEY=your_groq_api_key
 
 # Main content area
 if generate_button:
-    if not company_name or not company_website:
-        st.error("Please enter both company name and website.")
+    if not company_name:
+        st.error("Please enter a company name.")
     else:
         # Validate environment variables first
         if not validate_environment():
             st.error("❌ Missing required API keys. Please check your Streamlit Cloud settings.")
             st.stop()
+        
+        # Handle optional company website
+        if not company_website:
+            company_website = None
+            st.info("ℹ️ No website provided - using unrestricted search across all websites.")
+        else:
+            st.info(f"ℹ️ Using site-restricted search for: {company_website}")
         
         try:
             with st.spinner("Generating battlecard... This may take a few minutes."):
@@ -84,18 +155,25 @@ if generate_button:
                 
                 # Process each section
                 for i, (section, qinfo) in enumerate(queries.items()):
-                    status_text.text(f"Processing {section.replace('_', ' ').title()}...")
+                    search_type = "site-restricted" if company_website else "unrestricted"
+                    status_text.text(f"Processing {section.replace('_', ' ').title()} ({search_type})...")
                     
-                    # Search for restricted results
-                    restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
-                    
-                    # Add unrestricted search if needed
-                    if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
-                        unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
-                        unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
-                        all_snippets = restricted_snippets + unrestricted_snippets
+                    # If we have a website, try restricted search first, then fallback to unrestricted
+                    if company_website:
+                        restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+                        
+                        # Only do unrestricted search if we have some restricted results but need more
+                        if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
+                            status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
+                            unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
+                            unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
+                            # Combine results, prioritizing restricted ones
+                            all_snippets = restricted_snippets + unrestricted_snippets
+                        else:
+                            all_snippets = restricted_snippets
                     else:
-                        all_snippets = restricted_snippets
+                        # No website provided, just do unrestricted search
+                        all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
                     
                     # Generate summary
                     if len(all_snippets) == 0:
@@ -182,9 +260,25 @@ if generate_button:
             )
             
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
-            st.exception(e)
+            error_msg = str(e)
+            
+            # Provide user-friendly error messages
+            if "Google Custom Search API" in error_msg:
+                st.error("❌ Google search service error. Please check your API key and CSE ID in Streamlit Cloud settings.")
+            elif "Groq LLM API" in error_msg:
+                st.error("❌ AI processing service error. Please check your Groq API key in Streamlit Cloud settings.")
+            elif "Missing required environment variables" in error_msg:
+                st.error("❌ Missing API keys. Please configure your API keys in Streamlit Cloud settings.")
+            elif "403" in error_msg:
+                st.error("❌ Access denied. Please verify your API keys are correct and the services are enabled.")
+            elif "429" in error_msg:
+                st.error("⚠️ Rate limit exceeded. Please wait a moment and try again.")
+            else:
+                st.error(f"❌ An unexpected error occurred: {error_msg[:100]}{'...' if len(error_msg) > 100 else ''}")
+            
+            # Show detailed error in expander for debugging
+            with st.expander("🔧 Technical Details (for debugging)"):
+                st.code(error_msg, language="text")
 
 # Footer
 st.markdown("---")
-st.markdown("Built with ❤️ using Streamlit, Google Custom Search API, and Groq LLM") 

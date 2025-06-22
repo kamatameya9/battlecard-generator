@@ -77,37 +77,44 @@ def validate_environment():
     return True
 
 # Search queries for each section
-def get_queries(company_name, company_website):
+def get_queries(company_name, company_website=None):
     # daterestrict uses the format 'y[years]', 'm[months]', or 'd[days]'
+    # If company_website is provided, use site-restricted search; otherwise use unrestricted search
+    site_restriction = f"site:{company_website} " if company_website else ""
+    
     return {
         'recent_news': {
-            'query': f'"{company_name}" site:{company_website} (news OR press release OR announcement OR product OR expansion OR funding OR partnership OR lawsuit OR legal)',
+            'query': f'"{company_name}" {site_restriction}(news OR press release OR announcement OR product OR expansion OR funding OR partnership OR lawsuit OR legal)',
             'daterestrict': 'y2'
         },
         'leadership_changes': {
-            'query': f'"{company_name}" site:{company_website} (press release OR news OR announces OR appoints OR joins OR leaves OR steps down OR resigns OR named OR promoted OR hired OR fired OR leadership change OR CEO OR CFO OR CTO OR executive change OR management change OR board change OR president OR VP) -filetype:pdf',
+            'query': f'"{company_name}" {site_restriction}(press release OR news OR announces OR appoints OR joins OR leaves OR steps down OR resigns OR named OR promoted OR hired OR fired OR leadership change OR CEO OR CFO OR CTO OR executive change OR management change OR board change OR president OR VP) -filetype:pdf',
             'daterestrict': 'y2'
         },
         'mergers_acquisitions': {
-            'query': f'"{company_name}" site:{company_website} (merger OR acquisition OR acquired OR acquired by OR M&A OR stake OR equity OR buyout OR merger announcement OR acquisition announcement OR investment OR funding round OR deal closed)',
+            'query': f'"{company_name}" {site_restriction}(merger OR acquisition OR acquired OR acquired by OR M&A OR stake OR equity OR buyout OR merger announcement OR acquisition announcement OR investment OR funding round OR deal closed)',
             'daterestrict': 'y3'
         },
         'company_overview': {
-            'query': f'"{company_name}" site:{company_website} (about OR overview OR company profile OR history OR subsidiaries OR parent company OR services OR solutions OR strategic focus OR what we do OR who we are)',
+            'query': f'"{company_name}" {site_restriction}(about OR overview OR company profile OR history OR subsidiaries OR parent company OR services OR solutions OR strategic focus OR what we do OR who we are)',
             'daterestrict': None
         }
     }
 
 # Prompts for each section
-def get_prompts(company_name, company_website):
+def get_prompts(company_name, company_website=None):
     base_warning = "If you are unsure about the accuracy or relevance of a snippet, do not include it. Do not speculate or hallucinate information. Only use reputable news, company, or industry sources. Ignore results from legal case aggregators, unrelated PDFs, or document repositories."
     cluster_instruction = "Cluster similar items together, summarize each cluster, and return the most relevant or representative results for each section."
+    
+    # Create context string for prompts
+    company_context = f"{company_name} ({company_website})" if company_website else company_name
+    
     return {
         'recent_news': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_name} ({company_website}), summarize the most relevant news from the past 2 years. Focus on strategic initiatives, product launches, expansions, funding, partnerships, legal lawsuits, or any news relevant for business development officers. Do not include leadership changes or C-suite appointments or departures in this section. For each news item, provide a 2-3 line summary and include the source link and date. {cluster_instruction} {base_warning} If no information is found, respond with "No recent news found."
+You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, summarize the most relevant news from the past 2 years. Focus on strategic initiatives, product launches, expansions, funding, partnerships, legal lawsuits, or any news relevant for business development officers. Do not include leadership changes or C-suite appointments or departures in this section. For each news item, provide a 2-3 line summary and include the source link and date. {cluster_instruction} {base_warning} If no information is found, respond with "No recent news found."
 """,
         'leadership_changes': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_name} ({company_website}), identify C-Suite or leadership changes in the past 2 years. Only include a change if the snippet clearly states a change in an executive role (e.g., CEO, CFO, CTO, President, VP, or any title containing 'Chief'), and the source is a news article, press release, or official company announcement. Ignore snippets from legal documents, court filings, PDFs, or ambiguous mentions. If you are unsure, do not include the item. Do not speculate or hallucinate information. For each change, provide up to 5 bullet points with:
+You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, identify C-Suite or leadership changes in the past 2 years. Only include a change if the snippet clearly states a change in an executive role (e.g., CEO, CFO, CTO, President, VP, or any title containing 'Chief'), and the source is a news article, press release, or official company announcement. Ignore snippets from legal documents, court filings, PDFs, or ambiguous mentions. If you are unsure, do not include the item. Do not speculate or hallucinate information. For each change, provide up to 5 bullet points with:
 - Name of the individual
 - Their new or former title
 - Date or approximate time of the change
@@ -116,7 +123,7 @@ You are an expert business analyst. Using only the provided web search snippets,
 Only include changes within the last 24 months. {cluster_instruction} If no information is found, respond with "No recent leadership changes were found."
 """,
         'mergers_acquisitions': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_name} ({company_website}), summarize all Mergers and Acquisitions (M&A) involving the company in the past 3 years. Include cases where the company is a buyer, seller, merger partner, interested party, stakeholder, or involved with banks/equity firms. For each, provide up to 5 bullet points with:
+You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, summarize all Mergers and Acquisitions (M&A) involving the company in the past 3 years. Include cases where the company is a buyer, seller, merger partner, interested party, stakeholder, or involved with banks/equity firms. For each, provide up to 5 bullet points with:
 - Names of companies involved and their roles
 - Date or planned date of the M&A
 - 1-3 sentence summary of the outcome
@@ -125,7 +132,7 @@ You are an expert business analyst. Using only the provided web search snippets,
 {cluster_instruction} If no information is found, respond with "No recent Merger & Acquisitions found." {base_warning}
 """,
         'company_overview': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_name} ({company_website}), write a detailed company overview. Include geographical presence, subsidiaries, parent company (if any), history, services and solutions, and strategic focus. Always use citations with dates and provide a source link for each fact. Only use reputable news, company, or industry sources. {cluster_instruction} {base_warning} If information is missing, do not speculate.
+You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, write a detailed company overview. Include geographical presence, subsidiaries, parent company (if any), history, services and solutions, and strategic focus. Always use citations with dates and provide a source link for each fact. Only use reputable news, company, or industry sources. {cluster_instruction} {base_warning} If information is missing, do not speculate.
 """
     }
 
@@ -281,26 +288,43 @@ def deduplicate_sections(sections):
 
 def main():
     company_name = input("Enter the company name: ").strip()
-    company_website = input("Enter the company website (e.g., example.com): ").strip()
+    company_website = input("Enter the company website (optional, press Enter to skip): ").strip()
+    
+    # Use None if no website provided
+    if not company_website:
+        company_website = None
+        print("No website provided - will use unrestricted search.")
+    else:
+        print(f"Using site-restricted search for: {company_website}")
+    
     queries = get_queries(company_name, company_website)
     prompts = get_prompts(company_name, company_website)
     sections = {}
     changes = []
+    
     for section, qinfo in queries.items():
-        print(f"Searching for {section.replace('_', ' ').title()} (site restricted)...")
-        restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
-        print(f"Found {len(restricted_snippets)} restricted results.")
+        search_type = "site-restricted" if company_website else "unrestricted"
+        print(f"Searching for {section.replace('_', ' ').title()} ({search_type})...")
         
-        # Only do unrestricted search if we have some restricted results but need more
-        if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
-            print(f"Insufficient restricted results for {section.replace('_', ' ').title()}. Adding unrestricted search...")
-            unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
-            unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
-            print(f"Found {len(unrestricted_snippets)} additional unrestricted results.")
-            # Combine results, prioritizing restricted ones
-            all_snippets = restricted_snippets + unrestricted_snippets
+        # If we have a website, try restricted search first, then fallback to unrestricted
+        if company_website:
+            restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+            print(f"Found {len(restricted_snippets)} restricted results.")
+            
+            # Only do unrestricted search if we have some restricted results but need more
+            if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
+                print(f"Insufficient restricted results for {section.replace('_', ' ').title()}. Adding unrestricted search...")
+                unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
+                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
+                print(f"Found {len(unrestricted_snippets)} additional unrestricted results.")
+                # Combine results, prioritizing restricted ones
+                all_snippets = restricted_snippets + unrestricted_snippets
+            else:
+                all_snippets = restricted_snippets
         else:
-            all_snippets = restricted_snippets
+            # No website provided, just do unrestricted search
+            all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+            print(f"Found {len(all_snippets)} unrestricted results.")
         
         if len(all_snippets) == 0:
             print(f"No results found for {section.replace('_', ' ').title()}, skipping LLM call.")
@@ -310,6 +334,7 @@ def main():
             summary = call_llm_with_retry(prompts[section], all_snippets)
             sections[section] = summary
         changes.append(f"{datetime.now().strftime('%Y-%m-%d')}: Added/updated {section.replace('_', ' ').title()} section.")
+    
     # Deduplicate overlaps between sections
     sections = deduplicate_sections(sections)
     battlecard_file = write_battlecard(company_name, sections)

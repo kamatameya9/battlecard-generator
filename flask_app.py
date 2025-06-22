@@ -42,8 +42,12 @@ def generate_battlecard():
         company_name = data.get('company_name', '').strip()
         company_website = data.get('company_website', '').strip()
         
-        if not company_name or not company_website:
-            return jsonify({'error': 'Please provide both company name and website'}), 400
+        if not company_name:
+            return jsonify({'error': 'Please provide a company name'}), 400
+        
+        # Handle optional company website
+        if not company_website:
+            company_website = None
         
         # Get queries and prompts
         queries = get_queries(company_name, company_website)
@@ -52,16 +56,23 @@ def generate_battlecard():
         
         # Process each section
         for section, qinfo in queries.items():
-            # Search for restricted results
-            restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+            search_type = "site-restricted" if company_website else "unrestricted"
+            print(f"Processing {section} ({search_type})...")
             
-            # Add unrestricted search if needed
-            if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
-                unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
-                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
-                all_snippets = restricted_snippets + unrestricted_snippets
+            # If we have a website, try restricted search first, then fallback to unrestricted
+            if company_website:
+                restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+                
+                # Only do unrestricted search if we have some restricted results but need more
+                if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
+                    unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
+                    unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
+                    all_snippets = restricted_snippets + unrestricted_snippets
+                else:
+                    all_snippets = restricted_snippets
             else:
-                all_snippets = restricted_snippets
+                # No website provided, just do unrestricted search
+                all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
             
             # Generate summary
             if len(all_snippets) == 0:

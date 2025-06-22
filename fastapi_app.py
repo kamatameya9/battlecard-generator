@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Dict, Any, Optional
 import os
 import sys
 from datetime import datetime
@@ -23,7 +23,7 @@ from battlecard_main import (
 # Pydantic models for request/response
 class BattlecardRequest(BaseModel):
     company_name: str
-    company_website: str
+    company_website: Optional[str] = None
 
 class BattlecardResponse(BaseModel):
     success: bool
@@ -96,7 +96,7 @@ async def index(request: Request):
                     <h3>Generate Battlecard</h3>
                     <p><code>POST /generate</code></p>
                     <p>Generate a battlecard for a company.</p>
-                    <p><strong>Body:</strong> {"company_name": "Company Name", "company_website": "company.com"}</p>
+                    <p><strong>Body:</strong> {"company_name": "Company Name", "company_website": "company.com" (optional)}</p>
                 </div>
                 
                 <div class="endpoint">
@@ -129,14 +129,14 @@ async def generate_battlecard(request: BattlecardRequest, background_tasks: Back
     Generate a battlecard for the specified company.
     
     - **company_name**: The name of the company
-    - **company_website**: The company's website domain
+    - **company_website**: The company's website domain (optional)
     """
     try:
         company_name = request.company_name.strip()
-        company_website = request.company_website.strip()
+        company_website = request.company_website.strip() if request.company_website else None
         
-        if not company_name or not company_website:
-            raise HTTPException(status_code=400, detail="Please provide both company name and website")
+        if not company_name:
+            raise HTTPException(status_code=400, detail="Please provide a company name")
         
         # Run the battlecard generation in a thread pool to avoid blocking
         loop = asyncio.get_event_loop()
@@ -153,7 +153,7 @@ async def generate_battlecard(request: BattlecardRequest, background_tasks: Back
     except Exception as e:
         raise HTTPException(status_code=500, detail=secure_error_detail(e))
 
-def generate_battlecard_sync(company_name: str, company_website: str) -> Dict[str, Any]:
+def generate_battlecard_sync(company_name: str, company_website: Optional[str] = None) -> Dict[str, Any]:
     """Synchronous function to generate battlecard (runs in thread pool)"""
     # Get queries and prompts
     queries = get_queries(company_name, company_website)
@@ -162,16 +162,23 @@ def generate_battlecard_sync(company_name: str, company_website: str) -> Dict[st
     
     # Process each section
     for section, qinfo in queries.items():
-        # Search for restricted results
-        restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+        search_type = "site-restricted" if company_website else "unrestricted"
+        print(f"Processing {section} ({search_type})...")
         
-        # Add unrestricted search if needed
-        if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
-            unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
-            unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
-            all_snippets = restricted_snippets + unrestricted_snippets
+        # If we have a website, try restricted search first, then fallback to unrestricted
+        if company_website:
+            restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
+            
+            # Only do unrestricted search if we have some restricted results but need more
+            if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
+                unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
+                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
+                all_snippets = restricted_snippets + unrestricted_snippets
+            else:
+                all_snippets = restricted_snippets
         else:
-            all_snippets = restricted_snippets
+            # No website provided, just do unrestricted search
+            all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
         
         # Generate summary
         if len(all_snippets) == 0:
@@ -212,14 +219,14 @@ async def download_battlecard(request: BattlecardRequest):
     Download a battlecard as a markdown file.
     
     - **company_name**: The name of the company
-    - **company_website**: The company's website domain
+    - **company_website**: The company's website domain (optional)
     """
     try:
         company_name = request.company_name.strip()
-        company_website = request.company_website.strip()
+        company_website = request.company_website.strip() if request.company_website else None
         
-        if not company_name or not company_website:
-            raise HTTPException(status_code=400, detail="Please provide both company name and website")
+        if not company_name:
+            raise HTTPException(status_code=400, detail="Please provide a company name")
         
         # Generate battlecard
         loop = asyncio.get_event_loop()

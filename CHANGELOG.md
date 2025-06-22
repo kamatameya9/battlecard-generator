@@ -165,3 +165,61 @@
 - **FastAPI Error Handling**: Added `secure_error_detail()` function for sanitized error details
 - **CSE ID Patterns**: Enhanced regex patterns to catch more CSE ID formats
 - **Error Messages**: Replaced technical error details with user-friendly messages 
+
+## [0.24.0] - 2024-07-09
+### Added
+- **Streamlit Secrets Integration**: Added proper handling of Streamlit Cloud secrets for API key management
+- **Debug Information Panel**: Added expandable debug section showing API key status and environment variables
+- **Enhanced Error Handling**: Improved error messages with user-friendly descriptions and technical details in expandable sections
+- **CSS Styling**: Added comprehensive CSS for better text wrapping and responsive design
+- **Environment Validation**: Added pre-execution validation to catch missing API keys early
+
+### Changed
+- **Error Message Display**: Replaced long technical error messages with concise, actionable user messages
+- **UI/UX Improvements**: Fixed horizontal scrolling issues and improved overall layout
+- **Sidebar Configuration**: Set sidebar to always stay expanded and visible
+- **Page Configuration**: Added fixed sidebar state and improved page icon handling
+- **Error Categorization**: Added specific error handling for 403, 429, and missing environment variables
+
+### Fixed
+- **Horizontal Scrolling**: Prevented error messages from causing horizontal overflow
+- **Sidebar Collapse**: Fixed sidebar to stay visible and not collapse
+- **Text Wrapping**: Ensured all content wraps properly on different screen sizes
+- **Streamlit Deployment**: Fixed API key access issues in Streamlit Cloud deployment
+- **Error Message Length**: Truncated long error messages to prevent UI overflow
+
+### Security
+- ✅ Streamlit secrets properly loaded as environment variables
+- ✅ API keys masked in error messages
+- ✅ Secure error handling for deployed applications
+- ✅ Environment validation before API calls
+
+### UI/UX
+- ✅ Fixed sidebar always visible (300px width)
+- ✅ Responsive design with proper text wrapping
+- ✅ User-friendly error messages with action items
+- ✅ Debug information in expandable sections
+- ✅ Professional layout with consistent spacing 
+
+## [Unreleased]
+
+### Added
+- **Optional Company Website**: Made company website field optional across all applications (CLI, Streamlit, Flask, FastAPI)
+- **Unrestricted Search**: When no company website is provided, the system now performs unrestricted search across all websites
+- **Improved User Experience**: Updated UI text and help messages to clarify that website is optional
+- **Smart Fallback Logic**: Maintained intelligent fallback from site-restricted to unrestricted search when results are insufficient
+
+### Changed
+- **Core Functions**: Updated `get_queries()` and `get_prompts()` functions to accept optional `company_website` parameter
+- **Search Strategy**: Enhanced to use site-restricted search first, then fallback to unrestricted when needed (< 10 results)
+- **API Models**: Updated FastAPI Pydantic models to make `company_website` optional
+- **Form Validation**: Updated all web apps to only require company name, not website
+
+### Technical Details
+- **Query Generation**: Site restriction is now applied at query level: `site:example.com` if provided, empty string if not
+- **Prompt Context**: Company context in prompts adapts based on whether website is provided
+- **Search Type Indication**: Progress messages now show whether search is "site-restricted" or "unrestricted"
+- **Fallback Logic**: When website is provided but results are insufficient (< 10), automatically adds unrestricted search
+- **Backward Compatibility**: All existing functionality preserved when website is provided
+
+## [Previous Entries] 

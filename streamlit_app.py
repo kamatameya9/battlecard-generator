@@ -170,7 +170,7 @@ if generate_button:
                             if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
                                 status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
                                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
-                                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
+                                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20)
                                 # Combine results, prioritizing restricted ones
                                 all_snippets = restricted_snippets + unrestricted_snippets
                             else:

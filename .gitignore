@@ -4,6 +4,3 @@
 # Python cache
 __pycache__/
 *.pyc
-
-# Generated battlecards (optional)
-battlecard_*.md

@@ -393,7 +393,7 @@ def main():
             if len(restricted_snippets) < 10:
                 print(f"Insufficient restricted results for {section.replace('_', ' ').title()}. Adding unrestricted search...")
                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
-                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])
+                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20)
                 print(f"Found {len(unrestricted_snippets)} additional unrestricted results.")
                 # Combine results, prioritizing restricted ones
                 all_snippets = restricted_snippets + unrestricted_snippets

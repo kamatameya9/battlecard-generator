@@ -112,7 +112,7 @@ def get_prompts(company_name, company_website=None):
 Only use reputable news, company, or industry sources and always provide the exact source link from the search results. \
 Ignore results from legal case aggregators, unrelated PDFs, or document repositories."
     cluster_instruction = "Cluster similar items together, summarize each cluster, and return the most relevant or representative results for each \
-section with the most relevant source link."
+section with the most relevant source links. Return a consolidated list in the end following the bullet point structure without subsections."
     
     # Create context string for prompts
     company_context = f"{company_name} ({company_website})" if company_website else company_name
@@ -126,13 +126,10 @@ For each news item, provide a 2-3 line summary and include the exact source link
 "No recent news found."
 """,
         'leadership_changes': f"""
-Using only the provided web search snippets, og:description, and twitter:description about {company_context}, \
+Using only the provided web search title, snippets, og:description, and twitter:description about {company_context}, \
 identify ALL C-Suite and leadership changes in the past 2 years. This includes:
 - CEO, CFO, CTO, CSO, COO, and any other C-level positions
 - President, Vice President, Executive Vice President positions
-- Board of Directors changes
-- Any executive appointments, departures, promotions, or role changes
-- Interim leadership appointments
 
 For each change, provide up to 5 bullet points with:
 - Name of the individual
@@ -140,13 +137,13 @@ For each change, provide up to 5 bullet points with:
 - Date or approximate time of the change (be specific if possible)
 - A brief 1-3 sentence summary of the context and any notable details
 - The exact source link
-
-Include changes even if they are interim appointments or if the individual has since left. If you are unsure about a change, \
-include it with a note about uncertainty. Do not speculate or hallucinate information. {cluster_instruction} {base_warning} If no information is found, \
+ 
+If you are unsure about a change, include it with a note about uncertainty. Do not speculate or hallucinate information. \
+{cluster_instruction} {base_warning} If no information is found, \
 respond with "No recent leadership changes were found."
 """,
         'mergers_acquisitions': f"""
-Using only the provided web search snippets, og:description, and twitter:description about {company_context}, \
+Using only the provided web search title, snippets, og:description, and twitter:description about {company_context}, \
 identify and summarize all Mergers and Acquisitions (M&A) involving the company in the past 3 years. \
 Include instances where the company acted as Buyer, Seller, Merger participant, Interested Party, Stakeholder, or engaged with banks or equity firms. \
 This includes:
@@ -169,12 +166,12 @@ Only include clear M&A transactions. If no information is found, respond with "N
 {cluster_instruction} {base_warning}
 """,
         'company_overview': f"""
-Using only the provided web search snippets, og:description, and twitter:description about {company_context}, \
+Using only the provided web search title, snippets, og:description, and twitter:description about {company_context}, \
 write a detailed company overview. Include geographical presence, subsidiaries, parent company (if any), history, services and solutions, \
-and strategic focus. 
+and strategic focus. Return a one paragraph summary only with the most relevant exact source links.
 
 Always use citations with dates and provide a source link for each fact. Only use reputable news, company, or industry sources. \
-{cluster_instruction} {base_warning} Return a one paragraph summary only with the most relevant exact source links.
+{cluster_instruction} {base_warning} 
 """
     }
 
@@ -321,7 +318,7 @@ Your task is to deduplicate and reclassify items as follows:
 
 - If any item in Recent News actually belongs in Leadership Changes or Mergers & Acquisitions (M&A), move it to the correct section \
 (if not already present) and remove it from Recent News.
-- Do not duplicate items between sections.
+- Do not duplicate items between sections or within the section.
 - For each item, always include the source link.
 - Only move items if they clearly fit the definition of a leadership change or M&A event.
 - Return the cleaned sections in markdown format, using the following template:

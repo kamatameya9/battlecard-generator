@@ -19,7 +19,7 @@ if st.secrets:
 # Import functions from battlecard_main
 from battlecard_main import (
     get_queries, get_prompts, google_search, 
-    call_llm_with_retry, deduplicate_sections, validate_environment
+    call_llm_with_retry, llm_deduplicate_sections, validate_environment
 )
 
 # Set page config
@@ -189,9 +189,8 @@ if generate_button:
                     # Update progress
                     progress_bar.progress((i + 1) / len(queries))
                 
-                # Deduplicate sections
-                sections = deduplicate_sections(sections)
-                
+                # Deduplicate sections using LLM-based logic
+                sections = llm_deduplicate_sections(sections)
                 status_text.text("Battlecard generated successfully!")
                 
             # Display results

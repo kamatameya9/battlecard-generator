@@ -167,7 +167,7 @@ if generate_button:
                             restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
                             
                             # Only do unrestricted search if we have some restricted results but need more
-                            if len(restricted_snippets) >= 0 and len(restricted_snippets) < 10:
+                            if len(restricted_snippets) < 10:
                                 status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
                                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
                                 unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20)

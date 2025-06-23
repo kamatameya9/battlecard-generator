@@ -239,7 +239,7 @@ def call_llm(prompt, snippets):
             {'role': 'system', 'content': 'You are an expert business analyst.'},
             {'role': 'user', 'content': prompt + "\n\nSnippets:\n" + context}
         ],
-        'max_tokens': 1024,
+        'max_tokens': 8192,
         'temperature': 0.2
     }
     headers = {

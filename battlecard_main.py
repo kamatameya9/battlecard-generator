@@ -312,6 +312,7 @@ Your task is to deduplicate and reclassify items as follows:
 - If any item in Recent News actually belongs in Leadership Changes or Mergers & Acquisitions (M&A), move it to the correct section \
 (if not already present) and remove it from Recent News.
 - Do not duplicate items between sections.
+- For each item, always include the source link.
 - Only move items if they clearly fit the definition of a leadership change or M&A event.
 - Return the cleaned sections in markdown format, using the following template:
 
@@ -355,8 +356,6 @@ Here are the original sections:
         'leadership_changes': extract_section(cleaned_markdown, "Leadership Changes (Past 2 Years)"),
         'mergers_acquisitions': extract_section(cleaned_markdown, "Mergers & Acquisitions (Past 3 Years)")
     }
-
-deduplicate_sections = llm_deduplicate_sections
 
 def main():
     company_name = input("Enter the company name: ").strip()
@@ -408,7 +407,7 @@ def main():
         changes.append(f"{datetime.now().strftime('%Y-%m-%d')}: Added/updated {section.replace('_', ' ').title()} section.")
     
     # Deduplicate overlaps between sections
-    sections = deduplicate_sections(sections)
+    sections = llm_deduplicate_sections(sections)
     battlecard_file = write_battlecard(company_name, sections)
     print(f"Battlecard written to {battlecard_file}")
 

@@ -84,26 +84,32 @@ def get_queries(company_name, company_website=None):
     
     return {
         'recent_news': {
-            'query': f'"{company_name}" {site_restriction}(news OR press release OR announcement OR product OR expansion OR funding OR partnership OR lawsuit OR legal)',
+            'query': f'"{company_name}" {site_restriction}(news OR press release OR announcement OR product OR expansion OR funding OR \
+partnership OR lawsuit OR legal)',
             'daterestrict': 'y2'
         },
         'leadership_changes': {
-            'query': f'"{company_name}" {site_restriction}(press release OR news OR announces OR appoints OR joins OR leaves OR steps down OR resigns OR named OR promoted OR hired OR fired OR leadership change OR CEO OR CFO OR CTO OR COO OR CMO OR CHRO OR executive change OR management change OR board change OR president OR VP OR interim OR transition OR succession OR departure OR arrival OR new OR former OR current) -filetype:pdf',
+            'query': f'"{company_name}" {site_restriction}(appoints OR joins OR resigns OR "steps down" OR "fired" OR promoted OR hired OR \
+"leadership change" OR "executive change" OR "management change" OR CEO OR CFO OR CTO OR CSO OR COO OR VP or President OR "board change" OR \
+succession OR transition OR departure OR announcement)',
             'daterestrict': 'y2'
         },
         'mergers_acquisitions': {
-            'query': f'"{company_name}" {site_restriction}(merger OR acquisition OR acquired OR acquired by OR M&A OR stake OR equity OR buyout OR merger announcement OR acquisition announcement OR investment OR funding round OR deal closed OR purchases OR acquires OR buying OR sold OR divestiture OR strategic investment OR joint venture OR partnership deal)',
+            'query': f'"{company_name}" {site_restriction}(acquisition OR merger OR "acquired by" OR "acquires" OR "M&A" OR "stake purchase" OR \
+"joint venture" OR "strategic investment")',
             'daterestrict': 'y3'
         },
         'company_overview': {
-            'query': f'"{company_name}" {site_restriction}(about OR overview OR company profile OR history OR subsidiaries OR parent company OR services OR solutions OR strategic focus OR what we do OR who we are)',
+            'query': f'"{company_name}" {site_restriction}("company overview" OR "about us" OR "company profile" OR "our history" OR "what we do" OR \
+"who we are" OR "subsidiaries" OR "parent company" OR "services and solutions" OR "strategic focus")',
             'daterestrict': None
         }
     }
 
 # Prompts for each section
 def get_prompts(company_name, company_website=None):
-    base_warning = "If you are unsure about the accuracy or relevance of a snippet, do not include it. Do not speculate or hallucinate information. Only use reputable news, company, or industry sources. Ignore results from legal case aggregators, unrelated PDFs, or document repositories."
+    base_warning = "If you are unsure about the accuracy or relevance of a snippet, do not include it. Do not speculate or hallucinate information. \
+Only use reputable news, company, or industry sources. Ignore results from legal case aggregators, unrelated PDFs, or document repositories."
     cluster_instruction = "Cluster similar items together, summarize each cluster, and return the most relevant or representative results for each section."
     
     # Create context string for prompts
@@ -111,11 +117,16 @@ def get_prompts(company_name, company_website=None):
     
     return {
         'recent_news': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, summarize the most relevant news from the past 2 years. Focus on strategic initiatives, product launches, expansions, funding, partnerships, legal lawsuits, or any news relevant for business development officers. Do not include leadership changes, C-suite appointments or departures, or any merger and acquisition (M&A) activities in this section - these belong in their respective dedicated sections. For each news item, provide a 2-3 line summary and include the source link and date. {cluster_instruction} {base_warning} If no information is found, respond with "No recent news found."
+Using only the provided web search title, snippets, og:description, and twitter:description about {company_context}, \
+summarize the most relevant news from the past 2 years. Focus on strategic initiatives, product launches, expansions, funding, partnerships, \
+legal lawsuits, or any news relevant for business development officers. {cluster_instruction} {base_warning} \
+For each news item, provide a 2-3 line summary and include the source link and date. If no information is found, respond with \
+"No recent news found."
 """,
         'leadership_changes': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, identify ALL C-Suite and leadership changes in the past 2 years. This includes:
-- CEO, CFO, CTO, COO, CMO, CHRO, and any other C-level positions
+Using only the provided web search snippets, og:description, and twitter:description about {company_context}, \
+identify ALL C-Suite and leadership changes in the past 2 years. This includes:
+- CEO, CFO, CTO, CSO, COO, and any other C-level positions
 - President, Vice President, Executive Vice President positions
 - Board of Directors changes
 - Any executive appointments, departures, promotions, or role changes
@@ -128,10 +139,15 @@ For each change, provide up to 5 bullet points with:
 - A brief 1-3 sentence summary of the context and any notable details
 - The source link
 
-Include changes even if they are interim appointments or if the individual has since left. If you are unsure about a change, include it with a note about uncertainty. Do not speculate or hallucinate information. {cluster_instruction} If no information is found, respond with "No recent leadership changes were found."
+Include changes even if they are interim appointments or if the individual has since left. If you are unsure about a change, \
+include it with a note about uncertainty. Do not speculate or hallucinate information. {cluster_instruction} If no information is found, \
+respond with "No recent leadership changes were found."
 """,
         'mergers_acquisitions': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, identify and summarize all Mergers and Acquisitions (M&A) involving the company in the past 3 years. Include instances where the company acted as Buyer, Seller, Merger participant, Interested Party, Stakeholder, or engaged with banks or equity firms. This includes:
+Using only the provided web search snippets, og:description, and twitter:description about {company_context}, \
+identify and summarize all Mergers and Acquisitions (M&A) involving the company in the past 3 years. \
+Include instances where the company acted as Buyer, Seller, Merger participant, Interested Party, Stakeholder, or engaged with banks or equity firms. \
+This includes:
 - Company acquisitions (buying other companies)
 - Being acquired by another company
 - Merger announcements or completed mergers
@@ -147,16 +163,16 @@ For each M&A activity, provide up to 5 bullet points with:
 - Date of the citation/source
 - The source link
 
-IMPORTANT: Be thorough in identifying all M&A activities, including smaller acquisitions of products, technologies, or assets. If you find any mention of acquisitions, purchases, or deals, include them in this section.
-
-Only include clear M&A transactions. If no information is found, respond with "No recent Mergers & Acquisitions found." {cluster_instruction} {base_warning}
+Only include clear M&A transactions. If no information is found, respond with "No recent Mergers & Acquisitions found." \
+{cluster_instruction} {base_warning}
 """,
         'company_overview': f"""
-You are an expert business analyst. Using only the provided web search snippets, og:description, and twitter:description about {company_context}, write a detailed company overview. Include geographical presence, subsidiaries, parent company (if any), history, services and solutions, and strategic focus. 
+Using only the provided web search snippets, og:description, and twitter:description about {company_context}, \
+write a detailed company overview. Include geographical presence, subsidiaries, parent company (if any), history, services and solutions, \
+and strategic focus. 
 
-IMPORTANT: Do not include current leadership or executive information in this section, as this information may be outdated. Leadership changes should be captured in the dedicated Leadership Changes section. Focus on company structure, business model, and operational details.
-
-Always use citations with dates and provide a source link for each fact. Only use reputable news, company, or industry sources. {cluster_instruction} {base_warning} If information is missing, do not speculate.
+Always use citations with dates and provide a source link for each fact. Only use reputable news, company, or industry sources. \
+{cluster_instruction} {base_warning} Return a one paragraph summary only.
 """
     }
 
@@ -201,8 +217,7 @@ def google_search(query, daterestrict=None, num_results=30):
                 'snippet': item.get('snippet', ''),
                 'og_description': metatags.get('og:description', ''),
                 'twitter_description': metatags.get('twitter:description', ''),
-                'link': item.get('link'),
-                'date': metatags.get('article:published_time', '')
+                'link': item.get('link')
             }
             all_snippets.append(snippet)
         # If we got fewer than 10 results, there are no more pages
@@ -215,13 +230,13 @@ def google_search(query, daterestrict=None, num_results=30):
 def call_llm(prompt, snippets):
     # Combine snippets, og:description, and twitter:description into a single context
     context = "\n".join([
-        f"- {s['title']}: {s['snippet']} {s['og_description']} {s['twitter_description']} (Source: {s['link']}, Date: {s['date']})".strip()
+        f"- {s['title']}: {s['snippet']} {s['og_description']} {s['twitter_description']} (Source: {s['link']})".strip()
         for s in snippets if any([s['snippet'], s['og_description'], s['twitter_description']])
     ])
     payload = {
         'model': 'llama3-70b-8192',
         'messages': [
-            {'role': 'system', 'content': 'You are a helpful assistant.'},
+            {'role': 'system', 'content': 'You are an expert business analyst.'},
             {'role': 'user', 'content': prompt + "\n\nSnippets:\n" + context}
         ],
         'max_tokens': 1024,
@@ -283,46 +298,65 @@ def write_battlecard(company_name, sections):
         f.write(f"## Mergers & Acquisitions (Past 3 Years)\n{sections['mergers_acquisitions']}\n")
     return filename
 
-def extract_links(text):
-    # Extract all links from a markdown-formatted text
+def llm_deduplicate_sections(sections):
+    """
+    Use the LLM to deduplicate and reclassify items between sections.
+    - Move any items in Recent News that belong in Leadership Changes or M&A to the correct section (if not already present).
+    - Remove those items from Recent News.
+    - Ensure each item appears only in the most appropriate section.
+    """
+    prompt = f'''
+You are given four sections of a company battlecard: Recent News, Leadership Changes, Mergers & Acquisitions, and Company Overview. \
+Your task is to deduplicate and reclassify items as follows:
+
+- If any item in Recent News actually belongs in Leadership Changes or Mergers & Acquisitions (M&A), move it to the correct section \
+(if not already present) and remove it from Recent News.
+- Do not duplicate items between sections.
+- Only move items if they clearly fit the definition of a leadership change or M&A event.
+- Return the cleaned sections in markdown format, using the following template:
+
+## Company Overview
+[cleaned company overview]
+
+## Recent News
+[cleaned recent news]
+
+## Leadership Changes (Past 2 Years)
+[cleaned leadership changes]
+
+## Mergers & Acquisitions (Past 3 Years)
+[cleaned M&A]
+
+Here are the original sections:
+
+## Company Overview
+{sections['company_overview']}
+
+## Recent News
+{sections['recent_news']}
+
+## Leadership Changes (Past 2 Years)
+{sections['leadership_changes']}
+
+## Mergers & Acquisitions (Past 3 Years)
+{sections['mergers_acquisitions']}
+'''
+    # Use the same LLM call as before
+    cleaned_markdown = call_llm_with_retry(prompt, [])
+    # Parse the markdown back into sections
     import re
-    return set(re.findall(r'https?://\S+', text))
+    def extract_section(text, header):
+        pattern = rf"## {re.escape(header)}\n(.+?)(?=\n## |\Z)"
+        match = re.search(pattern, text, re.DOTALL)
+        return match.group(1).strip() if match else ""
+    return {
+        'company_overview': extract_section(cleaned_markdown, "Company Overview"),
+        'recent_news': extract_section(cleaned_markdown, "Recent News"),
+        'leadership_changes': extract_section(cleaned_markdown, "Leadership Changes (Past 2 Years)"),
+        'mergers_acquisitions': extract_section(cleaned_markdown, "Mergers & Acquisitions (Past 3 Years)")
+    }
 
-def deduplicate_sections(sections):
-    # Remove overlaps between recent news and leadership changes/mergers_acquisitions
-    # Keep items in leadership/mergers, remove from recent news
-    news = sections['recent_news']
-    leadership = sections['leadership_changes']
-    mergers = sections['mergers_acquisitions']
-
-    # Extract links from leadership and mergers
-    leadership_links = extract_links(leadership)
-    mergers_links = extract_links(mergers)
-    all_exclude_links = leadership_links | mergers_links
-
-    # Remove news items that have links in leadership or mergers
-    news_lines = news.split('\n')
-    filtered_news_lines = []
-    removed_items = []
-    
-    for line in news_lines:
-        # Check if this line contains any links that appear in leadership or mergers
-        line_has_excluded_link = any(link in line for link in all_exclude_links)
-        
-        if line_has_excluded_link:
-            removed_items.append(line.strip())
-        else:
-            filtered_news_lines.append(line)
-    
-    filtered_news = '\n'.join(filtered_news_lines)
-    sections['recent_news'] = filtered_news
-    
-    # If we removed items but M&A section is empty, there might be an issue
-    if removed_items and not mergers_links:
-        print(f"Warning: Removed {len(removed_items)} items from Recent News that should be in M&A, but M&A section appears empty.")
-        print("Removed items:", removed_items[:3])  # Show first 3 items
-    
-    return sections
+deduplicate_sections = llm_deduplicate_sections
 
 def main():
     company_name = input("Enter the company name: ").strip()
@@ -350,7 +384,7 @@ def main():
             print(f"Found {len(restricted_snippets)} restricted results.")
             
             # Only do unrestricted search if we have some restricted results but need more
-            if len(restricted_snippets) > 0 and len(restricted_snippets) < 10:
+            if len(restricted_snippets) < 10:
                 print(f"Insufficient restricted results for {section.replace('_', ' ').title()}. Adding unrestricted search...")
                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
                 unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'])

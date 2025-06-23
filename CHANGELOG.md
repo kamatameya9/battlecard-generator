@@ -232,4 +232,9 @@
 - **Backward Compatibility**: All existing functionality preserved when website is provided
 - **Responsive Design**: Removed fixed padding that caused layout shifts, implemented flexible sidebar sizing
 
-## [Previous Entries] 
+## [Previous Entries]
+- **Snippet Selection**: Added logic to select the most relevant snippets (by length) before sending to the LLM, ensuring the context window is not exceeded and improving summary quality when there are many snippets.
+- **LLM-based Deduplication**: Replaced link-based deduplication with an LLM-powered function that intelligently moves items from Recent News to Leadership Changes or M&A if appropriate, ensuring each item appears only in the most relevant section.
+- **Prompt Improvements**: Enhanced M&A and company overview prompts for clarity, conciseness, and to avoid outdated or misplaced information. Company overview now returns a one-paragraph summary only.
+- **Removed extract_links**: The old extract_links and link-based deduplication logic were removed in favor of LLM-based reclassification.
+- **Section Formatting**: Improved markdown parsing and output formatting for all sections after LLM deduplication. 

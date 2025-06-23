@@ -109,8 +109,10 @@ succession OR transition OR departure OR announcement)',
 # Prompts for each section
 def get_prompts(company_name, company_website=None):
     base_warning = "If you are unsure about the accuracy or relevance of a snippet, do not include it. Do not speculate or hallucinate information. \
-Only use reputable news, company, or industry sources. Ignore results from legal case aggregators, unrelated PDFs, or document repositories."
-    cluster_instruction = "Cluster similar items together, summarize each cluster, and return the most relevant or representative results for each section."
+Only use reputable news, company, or industry sources and always provide the exact source link from the search results. \
+Ignore results from legal case aggregators, unrelated PDFs, or document repositories."
+    cluster_instruction = "Cluster similar items together, summarize each cluster, and return the most relevant or representative results for each \
+section with the most relevant source link."
     
     # Create context string for prompts
     company_context = f"{company_name} ({company_website})" if company_website else company_name
@@ -120,7 +122,7 @@ Only use reputable news, company, or industry sources. Ignore results from legal
 Using only the provided web search title, snippets, og:description, and twitter:description about {company_context}, \
 summarize the most relevant news from the past 2 years. Focus on strategic initiatives, product launches, expansions, funding, partnerships, \
 legal lawsuits, or any news relevant for business development officers. {cluster_instruction} {base_warning} \
-For each news item, provide a 2-3 line summary and include the source link and date. If no information is found, respond with \
+For each news item, provide a 2-3 line summary and include the exact source link and date. If no information is found, respond with \
 "No recent news found."
 """,
         'leadership_changes': f"""
@@ -137,10 +139,10 @@ For each change, provide up to 5 bullet points with:
 - Their new or former title and role
 - Date or approximate time of the change (be specific if possible)
 - A brief 1-3 sentence summary of the context and any notable details
-- The source link
+- The exact source link
 
 Include changes even if they are interim appointments or if the individual has since left. If you are unsure about a change, \
-include it with a note about uncertainty. Do not speculate or hallucinate information. {cluster_instruction} If no information is found, \
+include it with a note about uncertainty. Do not speculate or hallucinate information. {cluster_instruction} {base_warning} If no information is found, \
 respond with "No recent leadership changes were found."
 """,
         'mergers_acquisitions': f"""
@@ -161,7 +163,7 @@ For each M&A activity, provide up to 5 bullet points with:
 - Date or planned date of the M&A
 - 1-3 sentence summary of the transaction details and outcome
 - Date of the citation/source
-- The source link
+- The exact source link
 
 Only include clear M&A transactions. If no information is found, respond with "No recent Mergers & Acquisitions found." \
 {cluster_instruction} {base_warning}
@@ -172,7 +174,7 @@ write a detailed company overview. Include geographical presence, subsidiaries, 
 and strategic focus. 
 
 Always use citations with dates and provide a source link for each fact. Only use reputable news, company, or industry sources. \
-{cluster_instruction} {base_warning} Return a one paragraph summary only.
+{cluster_instruction} {base_warning} Return a one paragraph summary only with the most relevant exact source links.
 """
     }
 
@@ -288,14 +290,22 @@ def call_llm_with_retry(prompt, snippets, retries=3, default_wait=15):
         except requests.exceptions.RequestException as e:
             secure_raise_error(e, "Groq LLM API request failed")
 
-def write_battlecard(company_name, sections):
-    filename = f"battlecard_{company_name.replace(' ', '_').lower()}.md"
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(f"# {company_name} Battlecard\n\n")
-        f.write(f"## Company Overview\n{sections['company_overview']}\n\n")
-        f.write(f"## Recent News\n{sections['recent_news']}\n\n")
-        f.write(f"## Leadership Changes (Past 2 Years)\n{sections['leadership_changes']}\n\n")
-        f.write(f"## Mergers & Acquisitions (Past 3 Years)\n{sections['mergers_acquisitions']}\n")
+def write_battlecard(company_name, sections, filename=None):
+    if filename:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(f"# {company_name} Battlecard\n\n")
+            f.write(f"## Company Overview\n{sections['company_overview']}\n\n")
+            f.write(f"## Recent News\n{sections['recent_news']}\n\n")
+            f.write(f"## Leadership Changes (Past 2 Years)\n{sections['leadership_changes']}\n\n")
+            f.write(f"## Mergers & Acquisitions (Past 3 Years)\n{sections['mergers_acquisitions']}\n")
+    else:
+        filename = f"battlecard_{company_name.replace(' ', '_').lower()}.md"
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(f"# {company_name} Battlecard\n\n")
+            f.write(f"## Company Overview\n{sections['company_overview']}\n\n")
+            f.write(f"## Recent News\n{sections['recent_news']}\n\n")
+            f.write(f"## Leadership Changes (Past 2 Years)\n{sections['leadership_changes']}\n\n")
+            f.write(f"## Mergers & Acquisitions (Past 3 Years)\n{sections['mergers_acquisitions']}\n")
     return filename
 
 def llm_deduplicate_sections(sections):
@@ -406,10 +416,16 @@ def main():
             sections[section] = summary
         changes.append(f"{datetime.now().strftime('%Y-%m-%d')}: Added/updated {section.replace('_', ' ').title()} section.")
     
+    # Write pre-deduplication battlecard
+    pre_file = f"battlecard_{company_name.replace(' ', '_').lower()}_pre_dedup.md"
+    write_battlecard(company_name, sections, filename=pre_file)
+    print(f"Pre-deduplication battlecard written to {pre_file}")
+    
     # Deduplicate overlaps between sections
-    sections = llm_deduplicate_sections(sections)
-    battlecard_file = write_battlecard(company_name, sections)
-    print(f"Battlecard written to {battlecard_file}")
+    deduped_sections = llm_deduplicate_sections(sections)
+    post_file = f"battlecard_{company_name.replace(' ', '_').lower()}_post_dedup.md"
+    write_battlecard(company_name, deduped_sections, filename=post_file)
+    print(f"Post-deduplication battlecard written to {post_file}")
 
 if __name__ == "__main__":
     if validate_environment():

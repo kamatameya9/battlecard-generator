@@ -136,7 +136,7 @@ with st.sidebar:
 def get_google_creds():
     # If user provided their own key, use only that
     if st.session_state.get('user_google_api_key'):
-        return [st.session_state['user_google_api_key']], st.session_state.get('user_google_cse_id') or os.getenv('GOOGLE_CSE_ID')
+        return [st.session_state['user_google_api_key']], os.getenv('GOOGLE_CSE_ID')
     # Otherwise, collect up to 5 keys from env
     keys = [
         os.getenv('GOOGLE_API_KEY'),
@@ -162,21 +162,19 @@ if generate_button:
         if not company_website:
             company_website = None
         
-        # User-provided API key/CSE ID form (shown if needed)
+        # User-provided API key form (shown if needed)
         if st.session_state.get('show_api_form', False):
-            st.warning("Default Google API keys have reached their search limit. Please enter your own Google API key and CSE ID to continue.")
+            st.warning("All default Google API keys have reached their search limit. Please enter your own Google API key to continue.")
             with st.form("api_form"):
                 user_api_key = st.text_input("Google API Key", type="password")
-                user_cse_id = st.text_input("Google CSE ID", type="password")
                 submitted = st.form_submit_button("Save and Retry")
             if submitted:
-                if user_api_key and user_cse_id:
+                if user_api_key:
                     st.session_state['user_google_api_key'] = user_api_key
-                    st.session_state['user_google_cse_id'] = user_cse_id
                     st.session_state['show_api_form'] = False
                     st.rerun()
                 else:
-                    st.error("Both fields are required.")
+                    st.error("API key is required.")
             st.stop()
         
         try:
@@ -193,9 +191,9 @@ if generate_button:
                         # If we have a website, try restricted search first, then fallback to unrestricted
                         if company_website:
                             try:
-                                restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 else None, google_cse_id=cse_id)
+                                restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None, google_cse_id=cse_id)
                             except Exception as e:
-                                if '429' in str(e):
+                                if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                     st.session_state['show_api_form'] = True
                                     st.rerun()
                                 else:
@@ -204,9 +202,9 @@ if generate_button:
                                 status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
                                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
                                 try:
-                                    unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=api_keys[0] if len(api_keys) == 1 else None, google_cse_id=cse_id)
+                                    unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None, google_cse_id=cse_id)
                                 except Exception as e:
-                                    if '429' in str(e):
+                                    if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                         st.session_state['show_api_form'] = True
                                         st.rerun()
                                     else:
@@ -216,9 +214,9 @@ if generate_button:
                                 all_snippets = restricted_snippets
                         else:
                             try:
-                                all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 else None, google_cse_id=cse_id)
+                                all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None, google_cse_id=cse_id)
                             except Exception as e:
-                                if '429' in str(e):
+                                if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                     st.session_state['show_api_form'] = True
                                     st.rerun()
                                 else:

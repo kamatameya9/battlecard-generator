@@ -233,7 +233,7 @@ If no relevant company overview information is found, respond exactly with:
 """
 }
 
-def google_search(query, daterestrict=None, num_results=20, google_api_key=None, google_cse_id=None):
+def google_search(query, daterestrict=None, num_results=20, google_api_key=None):
     url = "https://www.googleapis.com/customsearch/v1"
     all_snippets = []
     results_to_fetch = min(num_results, 30)
@@ -247,7 +247,7 @@ def google_search(query, daterestrict=None, num_results=20, google_api_key=None,
     ]
     # Remove None/empty keys and deduplicate
     api_keys = [k for k in api_keys if k]
-    cse_id = google_cse_id or GOOGLE_CSE_ID
+    cse_id = GOOGLE_CSE_ID
     for start in range(1, results_to_fetch + 1, 10):
         last_exception = None
         for idx, api_key in enumerate(api_keys):

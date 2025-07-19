@@ -238,3 +238,6 @@
 
 ### Added
 - When both default Google API keys are rate-limited in the Streamlit app, the user is now prompted to enter their own Google API key and CSE ID. These credentials are securely stored in the session and used for all subsequent Google search requests, allowing users to continue generating battlecards even after the default quota is exhausted. 
+
+### Changed
+- The Streamlit app now only prompts the user for a Google API key (not CSE ID) if all 5 environment keys are exhausted. Only the environment CSE ID is used for all requests, and the user is never asked for a CSE ID. 

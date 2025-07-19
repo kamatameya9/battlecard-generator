@@ -191,7 +191,7 @@ if generate_button:
                         # If we have a website, try restricted search first, then fallback to unrestricted
                         if company_website:
                             try:
-                                restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None, google_cse_id=cse_id)
+                                restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None)
                             except Exception as e:
                                 if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                     st.session_state['show_api_form'] = True
@@ -202,7 +202,7 @@ if generate_button:
                                 status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
                                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
                                 try:
-                                    unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None, google_cse_id=cse_id)
+                                    unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None)
                                 except Exception as e:
                                     if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                         st.session_state['show_api_form'] = True
@@ -214,7 +214,7 @@ if generate_button:
                                 all_snippets = restricted_snippets
                         else:
                             try:
-                                all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None, google_cse_id=cse_id)
+                                all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None)
                             except Exception as e:
                                 if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                     st.session_state['show_api_form'] = True

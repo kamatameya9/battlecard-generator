@@ -157,7 +157,7 @@ Instructions:
 4. Only include information clearly stated in the search metadata. 
 5. If a leadership change is uncertain based on the metadata, include it with a clear note about the uncertainty.
 6. Do not speculate or hallucinate. Only use what is clearly present in the snippet metadata from reputable sources \
-such as credible news, company, or industry publications.
+such as credible news, company, or industry publications. Only return results relevant to this company.
 7. Ignore results from legal document aggregators, unrelated PDFs, or generic repositories.
 8. At the end, for each leadership change, return a **consolidated bullet-point list** with the following details:
   - Name of the individual

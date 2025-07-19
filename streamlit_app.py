@@ -203,8 +203,9 @@ if generate_button or st.session_state.get('auto_generate', False):
                         # If we have a website, try restricted search first, then fallback to unrestricted
                         if company_website:
                             try:
-                                if st.session_state.get('user_google_api_key'):
-                                    restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=st.session_state['user_google_api_key'])
+                                user_key = st.session_state.get('user_google_api_key')
+                                if user_key:
+                                    restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=user_key)
                                 else:
                                     restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
                             except Exception as e:
@@ -217,8 +218,9 @@ if generate_button or st.session_state.get('auto_generate', False):
                                 status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
                                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
                                 try:
-                                    if st.session_state.get('user_google_api_key'):
-                                        unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=st.session_state['user_google_api_key'])
+                                    user_key = st.session_state.get('user_google_api_key')
+                                    if user_key:
+                                        unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=user_key)
                                     else:
                                         unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20)
                                 except Exception as e:
@@ -232,8 +234,9 @@ if generate_button or st.session_state.get('auto_generate', False):
                                 all_snippets = restricted_snippets
                         else:
                             try:
-                                if st.session_state.get('user_google_api_key'):
-                                    all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=st.session_state['user_google_api_key'])
+                                user_key = st.session_state.get('user_google_api_key')
+                                if user_key:
+                                    all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=user_key)
                                 else:
                                     all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
                             except Exception as e:

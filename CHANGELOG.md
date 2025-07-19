@@ -255,4 +255,4 @@
 - Clicking the Generate Battlecard button now resets all error and user API key state, ensuring the app always starts from a clean state and does not get stuck after an error or failed key. 
 
 ### Fixed
-- The Streamlit app now only passes the google_api_key argument to google_search if the user has provided a key, ensuring all 5 environment keys are tried when no user key is present. 
+- The Streamlit app now only passes the google_api_key argument to google_search if the user has provided a non-empty key, ensuring all 5 environment keys are tried when no user key is present. 

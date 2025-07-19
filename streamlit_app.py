@@ -132,6 +132,24 @@ with st.sidebar:
     
     generate_button = st.button("🚀 Generate Battlecard", type="primary")
 
+# Always show the API key form if needed, before anything else
+if st.session_state.get('show_api_form', False):
+    st.warning("All default Google API keys have reached their search limit. Please enter your own Google API key to continue.")
+    with st.form("api_form"):
+        user_api_key = st.text_input("Google API Key", type="password")
+        submitted = st.form_submit_button("Save and Retry")
+    if submitted:
+        if user_api_key:
+            st.session_state['user_google_api_key'] = user_api_key
+            st.session_state['show_api_form'] = False
+            st.session_state['auto_generate'] = True
+            st.session_state['company_name'] = company_name
+            st.session_state['company_website'] = company_website
+            st.rerun()
+        else:
+            st.error("API key is required.")
+    st.stop()
+
 # Helper to get Google API keys (up to 5) and CSE ID (from session or env)
 def get_google_creds():
     # If user provided their own key, use only that
@@ -165,24 +183,6 @@ if generate_button or st.session_state.get('auto_generate', False):
         # Handle optional company website
         if not company_website:
             company_website = None
-        
-        # User-provided API key form (shown if needed)
-        if st.session_state.get('show_api_form', False):
-            st.warning("All default Google API keys have reached their search limit. Please enter your own Google API key to continue.")
-            with st.form("api_form"):
-                user_api_key = st.text_input("Google API Key", type="password")
-                submitted = st.form_submit_button("Save and Retry")
-            if submitted:
-                if user_api_key:
-                    st.session_state['user_google_api_key'] = user_api_key
-                    st.session_state['show_api_form'] = False
-                    st.session_state['auto_generate'] = True
-                    st.session_state['company_name'] = company_name
-                    st.session_state['company_website'] = company_website
-                    st.rerun()
-                else:
-                    st.error("API key is required.")
-            st.stop()
         
         try:
             with st.spinner("Generating battlecard... This may take a few minutes."):

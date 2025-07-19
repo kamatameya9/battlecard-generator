@@ -244,3 +244,6 @@
 
 ### Fixed
 - The Streamlit app now persists user input (company name and website) and auto-triggers the generation logic after rerun, ensuring a seamless experience when the user is prompted for a new API key after all 5 environment keys are exhausted. 
+
+### Added
+- The Streamlit app now immediately shows the API key input form as soon as all 5 environment keys are exhausted, without requiring the user to click Generate again. The generation logic is only run if the form is not being shown, ensuring a seamless and intuitive user experience. 

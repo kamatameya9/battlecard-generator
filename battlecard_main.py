@@ -261,6 +261,7 @@ def google_search(query, daterestrict=None, num_results=20, google_api_key=None)
             if daterestrict:
                 params['dateRestrict'] = daterestrict
             try:
+                last_exception = None
                 response = requests.get(url, params=params)
                 response.raise_for_status()
                 data = response.json()
@@ -280,7 +281,6 @@ def google_search(query, daterestrict=None, num_results=20, google_api_key=None)
                     break
                 if len(all_snippets) >= results_to_fetch:
                     break
-                last_exception = None
                 break  # Success, don't try next keys
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 429:

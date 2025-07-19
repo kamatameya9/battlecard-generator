@@ -62,8 +62,15 @@ def secure_raise_error(original_error, context=""):
 # Validate required environment variables
 def validate_environment():
     missing_vars = []
-    if not GOOGLE_API_KEY:
-        missing_vars.append('GOOGLE_API_KEY')
+    # Check if at least one Google API key is set
+    if not any([
+        GOOGLE_API_KEY,
+        GOOGLE_API_KEY_2,
+        GOOGLE_API_KEY_3,
+        GOOGLE_API_KEY_4,
+        GOOGLE_API_KEY_5
+    ]):
+        missing_vars.append('GOOGLE_API_KEY (at least one of GOOGLE_API_KEY, GOOGLE_API_KEY_2, GOOGLE_API_KEY_3, GOOGLE_API_KEY_4, GOOGLE_API_KEY_5)')
     if not GOOGLE_CSE_ID:
         missing_vars.append('GOOGLE_CSE_ID')
     if not LLM_API_KEY:

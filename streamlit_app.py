@@ -129,8 +129,13 @@ with st.sidebar:
     st.header("Company Information")
     company_name = st.text_input("Company Name", value=st.session_state.get('company_name', ''), placeholder="e.g., Apple Inc.")
     company_website = st.text_input("Company Website (Optional)", value=st.session_state.get('company_website', ''), placeholder="e.g., apple.com", help="Leave empty for unrestricted search across all websites")
-    
     generate_button = st.button("🚀 Generate Battlecard", type="primary")
+
+# Reset state on generate button click
+if generate_button:
+    st.session_state.pop('show_api_form', None)
+    st.session_state.pop('user_google_api_key', None)
+    st.session_state.pop('auto_generate', None)
 
 # Always show the API key form if needed, before anything else
 if st.session_state.get('show_api_form', False):
@@ -198,7 +203,10 @@ if generate_button or st.session_state.get('auto_generate', False):
                         # If we have a website, try restricted search first, then fallback to unrestricted
                         if company_website:
                             try:
-                                restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None)
+                                if st.session_state.get('user_google_api_key'):
+                                    restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=st.session_state['user_google_api_key'])
+                                else:
+                                    restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
                             except Exception as e:
                                 if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                     st.session_state['show_api_form'] = True
@@ -209,7 +217,10 @@ if generate_button or st.session_state.get('auto_generate', False):
                                 status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
                                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
                                 try:
-                                    unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None)
+                                    if st.session_state.get('user_google_api_key'):
+                                        unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=st.session_state['user_google_api_key'])
+                                    else:
+                                        unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20)
                                 except Exception as e:
                                     if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                         st.session_state['show_api_form'] = True
@@ -221,7 +232,10 @@ if generate_button or st.session_state.get('auto_generate', False):
                                 all_snippets = restricted_snippets
                         else:
                             try:
-                                all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 and st.session_state.get('user_google_api_key') else None)
+                                if st.session_state.get('user_google_api_key'):
+                                    all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=st.session_state['user_google_api_key'])
+                                else:
+                                    all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
                             except Exception as e:
                                 if '429' in str(e) and not st.session_state.get('user_google_api_key'):
                                     st.session_state['show_api_form'] = True

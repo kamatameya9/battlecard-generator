@@ -247,3 +247,9 @@
 
 ### Added
 - The Streamlit app now immediately shows the API key input form as soon as all 5 environment keys are exhausted, without requiring the user to click Generate again. The generation logic is only run if the form is not being shown, ensuring a seamless and intuitive user experience. 
+
+### Fixed
+- The Streamlit app now correctly rotates through all 5 environment API keys before prompting the user for a key, and only uses the user-supplied key if provided. 
+
+### Fixed
+- Clicking the Generate Battlecard button now resets all error and user API key state, ensuring the app always starts from a clean state and does not get stuck after an error or failed key. 

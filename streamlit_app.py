@@ -174,7 +174,7 @@ if generate_button:
                     st.session_state['user_google_api_key'] = user_api_key
                     st.session_state['user_google_cse_id'] = user_cse_id
                     st.session_state['show_api_form'] = False
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error("Both fields are required.")
             st.stop()
@@ -197,7 +197,7 @@ if generate_button:
                             except Exception as e:
                                 if '429' in str(e):
                                     st.session_state['show_api_form'] = True
-                                    st.experimental_rerun()
+                                    st.rerun()
                                 else:
                                     raise
                             if len(restricted_snippets) < 10:
@@ -208,7 +208,7 @@ if generate_button:
                                 except Exception as e:
                                     if '429' in str(e):
                                         st.session_state['show_api_form'] = True
-                                        st.experimental_rerun()
+                                        st.rerun()
                                     else:
                                         raise
                                 all_snippets = restricted_snippets + unrestricted_snippets
@@ -220,7 +220,7 @@ if generate_button:
                             except Exception as e:
                                 if '429' in str(e):
                                     st.session_state['show_api_form'] = True
-                                    st.experimental_rerun()
+                                    st.rerun()
                                 else:
                                     raise
                         if len(all_snippets) == 0:

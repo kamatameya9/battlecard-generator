@@ -89,11 +89,9 @@ partnership OR lawsuit OR legal)',
             'daterestrict': 'y2'
         },
         'leadership_changes': {
-            'query': f'"{company_name}" {site_restriction}("appointed" OR "joins" OR "resigns" OR "steps down" OR "fired" OR "retires" OR "promoted" OR \
-"hired" OR "named" OR "succeeded by" OR "replaced by" OR "transition" OR "succession" OR "leadership change" OR "executive change" OR \
-"management change" OR "CEO" OR "CFO" OR "CTO" OR "COO" OR "CSO" OR "CMO" OR "CHRO" OR "CIO" OR "President" OR "Vice President" OR "EVP" OR "SVP" OR \
-"Board of Directors" OR "board change" OR "Chief Executive Officer" OR "Chief Financial Officer" OR "Chief Technology Officer" OR \
-"Chief Operating Officer" OR "Chief Strategy Officer" OR "Chief Marketing Officer")',
+            'query': f'"{company_name}" {site_restriction} (appoint* OR join* OR resign* OR "steps down" OR retire* OR promot* OR hire* OR name* OR \
+"succeeded" OR "replaced" OR "transition" OR succession OR "leadership change" OR "executive change" OR "management change" OR \
+CEO OR CFO OR CTO OR COO OR CMO OR CHRO OR CIO OR President OR "Vice President" OR EVP OR SVP OR "Board of Directors" OR "board change")',
             'daterestrict': 'y2'
         },
         'mergers_acquisitions': {

@@ -407,7 +407,7 @@ Produce:
 ## Mergers & Acquisitions (Past 3 Years)
 [cleaned M&A]
 
-## Recent News (Past 2 years)
+## Recent News (Past 2 Years)
 [cleaned recent news]
 
 ## Company Overview

@@ -12,9 +12,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 if st.secrets:
     os.environ['GOOGLE_API_KEY'] = st.secrets.get('GOOGLE_API_KEY', '')
     os.environ['GOOGLE_API_KEY_2'] = st.secrets.get('GOOGLE_API_KEY_2', '')
+    os.environ['GOOGLE_API_KEY_3'] = st.secrets.get('GOOGLE_API_KEY_3', '')
+    os.environ['GOOGLE_API_KEY_4'] = st.secrets.get('GOOGLE_API_KEY_4', '')
+    os.environ['GOOGLE_API_KEY_5'] = st.secrets.get('GOOGLE_API_KEY_5', '')
     os.environ['GOOGLE_CSE_ID'] = st.secrets.get('GOOGLE_CSE_ID', '')
-    os.environ['GOOGLE_CSE_ID_2'] = st.secrets.get('GOOGLE_CSE_ID_2', '')
-    os.environ['LLM_API_KEY'] = st.secrets.get('LLM_API_KEY', '')
 
 # Import functions from battlecard_main
 from battlecard_main import (
@@ -131,6 +132,22 @@ with st.sidebar:
     
     generate_button = st.button("🚀 Generate Battlecard", type="primary")
 
+# Helper to get Google API keys (up to 5) and CSE ID (from session or env)
+def get_google_creds():
+    # If user provided their own key, use only that
+    if st.session_state.get('user_google_api_key'):
+        return [st.session_state['user_google_api_key']], st.session_state.get('user_google_cse_id') or os.getenv('GOOGLE_CSE_ID')
+    # Otherwise, collect up to 5 keys from env
+    keys = [
+        os.getenv('GOOGLE_API_KEY'),
+        os.getenv('GOOGLE_API_KEY_2'),
+        os.getenv('GOOGLE_API_KEY_3'),
+        os.getenv('GOOGLE_API_KEY_4'),
+        os.getenv('GOOGLE_API_KEY_5')
+    ]
+    keys = [k for k in keys if k]
+    return keys, os.getenv('GOOGLE_CSE_ID')
+
 # Main content area
 if generate_button:
     if not company_name:
@@ -145,51 +162,73 @@ if generate_button:
         if not company_website:
             company_website = None
         
+        # User-provided API key/CSE ID form (shown if needed)
+        if st.session_state.get('show_api_form', False):
+            st.warning("Default Google API keys have reached their search limit. Please enter your own Google API key and CSE ID to continue.")
+            with st.form("api_form"):
+                user_api_key = st.text_input("Google API Key", type="password")
+                user_cse_id = st.text_input("Google CSE ID", type="password")
+                submitted = st.form_submit_button("Save and Retry")
+            if submitted:
+                if user_api_key and user_cse_id:
+                    st.session_state['user_google_api_key'] = user_api_key
+                    st.session_state['user_google_cse_id'] = user_cse_id
+                    st.session_state['show_api_form'] = False
+                    st.experimental_rerun()
+                else:
+                    st.error("Both fields are required.")
+            st.stop()
+        
         try:
             with st.spinner("Generating battlecard... This may take a few minutes."):
-                # Get queries and prompts
                 queries = get_queries(company_name, company_website)
                 prompts = get_prompts(company_name, company_website)
                 sections = {}
-                
-                # Progress bar
                 progress_bar = st.progress(0)
                 status_text = st.empty()
-                
-                # Process each section with print suppression
+                api_keys, cse_id = get_google_creds()
                 for i, (section, qinfo) in enumerate(queries.items()):
                     status_text.text(f"Processing {section.replace('_', ' ').title()}...")
-                    
-                    # Suppress print statements from imported functions
                     with contextlib.redirect_stdout(io.StringIO()):
                         # If we have a website, try restricted search first, then fallback to unrestricted
                         if company_website:
-                            restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
-                            
-                            # Only do unrestricted search if we have some restricted results but need more
+                            try:
+                                restricted_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 else None, google_cse_id=cse_id)
+                            except Exception as e:
+                                if '429' in str(e):
+                                    st.session_state['show_api_form'] = True
+                                    st.experimental_rerun()
+                                else:
+                                    raise
                             if len(restricted_snippets) < 10:
                                 status_text.text(f"Adding unrestricted search for {section.replace('_', ' ').title()}...")
                                 unrestricted_query = qinfo['query'].replace(f"site:{company_website} ", "")
-                                unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20)
-                                # Combine results, prioritizing restricted ones
+                                try:
+                                    unrestricted_snippets = google_search(unrestricted_query, qinfo['daterestrict'], 20, google_api_key=api_keys[0] if len(api_keys) == 1 else None, google_cse_id=cse_id)
+                                except Exception as e:
+                                    if '429' in str(e):
+                                        st.session_state['show_api_form'] = True
+                                        st.experimental_rerun()
+                                    else:
+                                        raise
                                 all_snippets = restricted_snippets + unrestricted_snippets
                             else:
                                 all_snippets = restricted_snippets
                         else:
-                            # No website provided, just do unrestricted search
-                            all_snippets = google_search(qinfo['query'], qinfo['daterestrict'])
-                        
-                        # Generate summary
+                            try:
+                                all_snippets = google_search(qinfo['query'], qinfo['daterestrict'], google_api_key=api_keys[0] if len(api_keys) == 1 else None, google_cse_id=cse_id)
+                            except Exception as e:
+                                if '429' in str(e):
+                                    st.session_state['show_api_form'] = True
+                                    st.experimental_rerun()
+                                else:
+                                    raise
                         if len(all_snippets) == 0:
                             sections[section] = f"No information found for {section.replace('_', ' ').title()}."
                         else:
                             summary = call_llm_with_retry(prompts[section], all_snippets)
                             sections[section] = summary
-                    
-                    # Update progress
                     progress_bar.progress((i + 1) / len(queries))
-                
-                # Deduplicate sections using LLM-based logic
                 sections = llm_deduplicate_sections(sections)
                 status_text.text("Battlecard generated successfully!")
                 

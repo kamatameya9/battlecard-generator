@@ -15,8 +15,10 @@ except ImportError:
 # API Configuration - Load from environment variables
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 GOOGLE_API_KEY_2 = os.getenv('GOOGLE_API_KEY_2')
+GOOGLE_API_KEY_3 = os.getenv('GOOGLE_API_KEY_3')
+GOOGLE_API_KEY_4 = os.getenv('GOOGLE_API_KEY_4')
+GOOGLE_API_KEY_5 = os.getenv('GOOGLE_API_KEY_5')
 GOOGLE_CSE_ID = os.getenv('GOOGLE_CSE_ID')
-GOOGLE_CSE_ID_2 = os.getenv('GOOGLE_CSE_ID_2')
 LLM_API_URL = os.getenv('LLM_API_URL', 'https://api.groq.com/openai/v1/chat/completions')
 LLM_API_KEY = os.getenv('LLM_API_KEY')
 
@@ -222,55 +224,74 @@ of sources used, with citation dates and URLs. Only show the top 5 most relevant
 If no relevant company overview information is found, respond exactly with:
 "No reliable company overview information was found."
 """
-    }
+}
 
-def google_search(query, daterestrict=None, num_results=20):
+def google_search(query, daterestrict=None, num_results=20, google_api_key=None, google_cse_id=None):
     url = "https://www.googleapis.com/customsearch/v1"
     all_snippets = []
     results_to_fetch = min(num_results, 30)
+    # Use provided key or fall back to environment keys (try up to 5 keys)
+    api_keys = [
+        google_api_key or GOOGLE_API_KEY,
+        GOOGLE_API_KEY_2,
+        GOOGLE_API_KEY_3,
+        GOOGLE_API_KEY_4,
+        GOOGLE_API_KEY_5
+    ]
+    # Remove None/empty keys and deduplicate
+    api_keys = [k for k in api_keys if k]
+    cse_id = google_cse_id or GOOGLE_CSE_ID
     for start in range(1, results_to_fetch + 1, 10):
-        params = {
-            'key': GOOGLE_API_KEY,
-            'cx': GOOGLE_CSE_ID,
-            'q': query,
-            'num': min(10, results_to_fetch - len(all_snippets)),
-            'start': start
-        }
-        if daterestrict:
-            params['dateRestrict'] = daterestrict
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429 and GOOGLE_API_KEY_2 and GOOGLE_CSE_ID_2:
-                print('Primary Google API key/CSE ID rate limited, retrying with secondary key and CSE ID...')
-                params['key'] = GOOGLE_API_KEY_2
-                params['cx'] = GOOGLE_CSE_ID_2
-                try:
-                    response = requests.get(url, params=params)
-                    response.raise_for_status()
-                except requests.exceptions.HTTPError as e2:
-                    secure_raise_error(e2, "Google Custom Search API error (secondary key)")
-            else:
-                secure_raise_error(e, "Google Custom Search API error")
-        except requests.exceptions.RequestException as e:
-            secure_raise_error(e, "Google Custom Search API request failed")
-        
-        data = response.json()
-        items = data.get('items', [])
-        for item in items:
-            metatags = item.get('pagemap', {}).get('metatags', [{}])[0]
-            snippet = {
-                'title': item.get('title'),
-                'snippet': item.get('snippet', ''),
-                'og_description': metatags.get('og:description', ''),
-                'twitter_description': metatags.get('twitter:description', ''),
-                'link': item.get('link')
+        last_exception = None
+        for idx, api_key in enumerate(api_keys):
+            params = {
+                'key': api_key,
+                'cx': cse_id,
+                'q': query,
+                'num': min(10, results_to_fetch - len(all_snippets)),
+                'start': start
             }
-            all_snippets.append(snippet)
+            if daterestrict:
+                params['dateRestrict'] = daterestrict
+            try:
+                response = requests.get(url, params=params)
+                response.raise_for_status()
+                data = response.json()
+                items = data.get('items', [])
+                for item in items:
+                    metatags = item.get('pagemap', {}).get('metatags', [{}])[0]
+                    snippet = {
+                        'title': item.get('title'),
+                        'snippet': item.get('snippet', ''),
+                        'og_description': metatags.get('og:description', ''),
+                        'twitter_description': metatags.get('twitter:description', ''),
+                        'link': item.get('link')
+                    }
+                    all_snippets.append(snippet)
+                # If we got fewer than 10 results, there are no more pages
+                if len(items) < 10:
+                    break
+                if len(all_snippets) >= results_to_fetch:
+                    break
+                last_exception = None
+                break  # Success, don't try next keys
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:
+                    if idx == len(api_keys) - 1:
+                        # Last key, raise error
+                        secure_raise_error(e, f"Google Custom Search API error (all {len(api_keys)} keys exhausted)")
+                    else:
+                        # Try next key
+                        last_exception = e
+                        continue
+                else:
+                    secure_raise_error(e, "Google Custom Search API error")
+            except requests.exceptions.RequestException as e:
+                secure_raise_error(e, "Google Custom Search API request failed")
+        if last_exception:
+            # If all keys failed, raise the last exception
+            secure_raise_error(last_exception, "Google Custom Search API error (all keys failed)")
         # If we got fewer than 10 results, there are no more pages
-        if len(items) < 10:
-            break
         if len(all_snippets) >= results_to_fetch:
             break
     return all_snippets

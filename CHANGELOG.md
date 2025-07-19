@@ -202,39 +202,39 @@
 - ✅ Professional layout with consistent spacing 
 
 ## [Unreleased]
-
 ### Added
-- **Optional Company Website**: Made company website field optional across all applications (CLI, Streamlit, Flask, FastAPI)
-- **Unrestricted Search**: When no company website is provided, the system now performs unrestricted search across all websites
-- **Improved User Experience**: Updated UI text and help messages to clarify that website is optional
-- **Smart Fallback Logic**: Maintained intelligent fallback from site-restricted to unrestricted search when results are insufficient
+- Support for up to 5 Google API keys (GOOGLE_API_KEY, GOOGLE_API_KEY_2, GOOGLE_API_KEY_3, GOOGLE_API_KEY_4, GOOGLE_API_KEY_5) with automatic rotation in both the backend and the Streamlit web app: the system will try each key in order until one succeeds or all are rate-limited, maximizing available quota.
+- Made the company website field optional across all interfaces (CLI, Streamlit, Flask, FastAPI). If not provided, the system now performs unrestricted search across all websites.
+- Updated all user interfaces and help messages to clarify that the company website is optional.
+- Enhanced fallback logic: when a website is provided but results are insufficient (< 10), automatically adds unrestricted search and combines results, prioritizing site-restricted ones.
+- Improved prompts for Recent News and M&A to prevent misclassification of acquisition activities and to specify company roles in M&A.
+- Improved leadership changes search and prompts to better capture CEO transitions, interim appointments, and to prevent outdated leadership information in the company overview.
+- Enhanced M&A search and prompts to better capture product acquisitions, asset purchases, and to improve deduplication logic.
+- Updated FastAPI Pydantic models to make company_website optional.
+- Updated all web app forms and validation to only require company name.
+- Improved Streamlit layout to prevent page shifting when sidebar is open after content generation.
+- Updated Streamlit page icon to a search/research icon.
+- Suppressed print statements from imported functions in Streamlit app for a cleaner user experience.
+- Removed debug information and API configuration sections from Streamlit app for a cleaner interface.
+- Cleaned up output and interface messages for a simpler user flow.
+- Improved markdown output formatting and section parsing after LLM deduplication.
 
 ### Changed
-- **Core Functions**: Updated `get_queries()` and `get_prompts()` functions to accept optional `company_website` parameter
-- **Search Strategy**: Enhanced to use site-restricted search first, then fallback to unrestricted when needed (< 10 results)
-- **API Models**: Updated FastAPI Pydantic models to make `company_website` optional
-- **Form Validation**: Updated all web apps to only require company name, not website
-- **Streamlit Layout**: Fixed responsive layout to prevent page shifting when sidebar is open after content generation
-- **Page Icon**: Updated Streamlit page icon to display proper search/research icon instead of chart icon
-- **UI Cleanup**: Removed debug information expander and API configuration section from Streamlit app for cleaner interface
-- **Output Cleanup**: Suppressed print statements from imported functions in Streamlit app for cleaner user experience
-- **Interface Simplification**: Removed website search type information messages and processing status details for cleaner user flow
-- **Prompt Improvements**: Enhanced Recent News and M&A prompts to prevent misclassification of acquisition activities, including comprehensive company role specifications for M&A
-- **Leadership Detection**: Improved leadership changes search query and prompts to better capture CEO transitions, interim appointments, and prevent outdated leadership information in company overview
-- **M&A Detection**: Enhanced M&A search query and prompt to better capture product acquisitions, asset purchases, and improve deduplication logic with debugging
-- **Text Corrections**: Fixed typo in M&A prompt response message ("Merger & Acquisitions" → "Mergers & Acquisitions")
+- Refactored get_queries() and get_prompts() to accept an optional company_website parameter and to apply site restriction at the query level.
+- Updated search logic to use site-restricted search first, then fallback to unrestricted when needed (< 10 results).
+- Improved error handling and user messages across all interfaces.
+- Enhanced deduplication logic to use LLM-powered reclassification, ensuring each item appears only in the most relevant section.
+- Improved markdown parsing and output formatting for all sections after LLM deduplication.
+- Updated documentation to reflect new optional website behavior and improved user experience.
+- Fixed typo in M&A prompt response message ("Merger & Acquisitions" → "Mergers & Acquisitions").
 
 ### Technical Details
-- **Query Generation**: Site restriction is now applied at query level: `site:example.com` if provided, empty string if not
-- **Prompt Context**: Company context in prompts adapts based on whether website is provided
-- **Search Type Indication**: Progress messages now show whether search is "site-restricted" or "unrestricted"
-- **Fallback Logic**: When website is provided but results are insufficient (< 10), automatically adds unrestricted search
-- **Backward Compatibility**: All existing functionality preserved when website is provided
-- **Responsive Design**: Removed fixed padding that caused layout shifts, implemented flexible sidebar sizing
+- Site restriction is now applied at the query level: `site:example.com` if provided, empty string if not.
+- Company context in prompts adapts based on whether website is provided.
+- Progress messages now show whether search is "site-restricted" or "unrestricted".
+- When website is provided but results are insufficient (< 10), automatically adds unrestricted search.
+- All existing functionality is preserved when website is provided.
+- Removed fixed padding that caused layout shifts in Streamlit, implemented flexible sidebar sizing. 
 
-## [Previous Entries]
-- **Snippet Selection**: Added logic to select the most relevant snippets (by length) before sending to the LLM, ensuring the context window is not exceeded and improving summary quality when there are many snippets.
-- **LLM-based Deduplication**: Replaced link-based deduplication with an LLM-powered function that intelligently moves items from Recent News to Leadership Changes or M&A if appropriate, ensuring each item appears only in the most relevant section.
-- **Prompt Improvements**: Enhanced M&A and company overview prompts for clarity, conciseness, and to avoid outdated or misplaced information. Company overview now returns a one-paragraph summary only.
-- **Removed extract_links**: The old extract_links and link-based deduplication logic were removed in favor of LLM-based reclassification.
-- **Section Formatting**: Improved markdown parsing and output formatting for all sections after LLM deduplication. 
+### Added
+- When both default Google API keys are rate-limited in the Streamlit app, the user is now prompted to enter their own Google API key and CSE ID. These credentials are securely stored in the session and used for all subsequent Google search requests, allowing users to continue generating battlecards even after the default quota is exhausted. 

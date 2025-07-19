@@ -423,7 +423,7 @@ Produce:
         return match.group(1).strip() if match else ""
     return {
         'company_overview': extract_section(cleaned_markdown, "Company Overview"),
-        'recent_news': extract_section(cleaned_markdown, "Recent News"),
+        'recent_news': extract_section(cleaned_markdown, "Recent News (Past 2 Years)"),
         'leadership_changes': extract_section(cleaned_markdown, "Leadership Changes (Past 2 Years)"),
         'mergers_acquisitions': extract_section(cleaned_markdown, "Mergers & Acquisitions (Past 3 Years)")
     }

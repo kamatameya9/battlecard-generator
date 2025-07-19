@@ -199,60 +199,60 @@ if generate_button:
             # Create tabs for different sections
             tab1, tab2, tab3, tab4, tab5 = st.tabs([
                 "📋 Full Battlecard", 
-                "🏢 Company Overview", 
-                "📰 Recent News", 
                 "👥 Leadership Changes", 
-                "🤝 M&A"
+                "🤝 M&A",
+                "📰 Recent News", 
+                "🏢 Company Overview"
             ])
             
             with tab1:
                 st.markdown(f"# {company_name} Battlecard")
                 st.markdown(f"*Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*")
                 
-                st.markdown("## Company Overview")
-                st.markdown(sections['company_overview'])
-                
-                st.markdown("## Recent News")
-                st.markdown(sections['recent_news'])
-                
                 st.markdown("## Leadership Changes (Past 2 Years)")
                 st.markdown(sections['leadership_changes'])
-                
+
                 st.markdown("## Mergers & Acquisitions (Past 3 Years)")
                 st.markdown(sections['mergers_acquisitions'])
+
+                st.markdown("## Recent News (Past 2 Years)")
+                st.markdown(sections['recent_news'])
+
+                st.markdown("## Company Overview")
+                st.markdown(sections['company_overview'])
             
             with tab2:
-                st.markdown("## Company Overview")
-                st.markdown(sections['company_overview'])
-            
-            with tab3:
-                st.markdown("## Recent News")
-                st.markdown(sections['recent_news'])
-            
-            with tab4:
                 st.markdown("## Leadership Changes (Past 2 Years)")
                 st.markdown(sections['leadership_changes'])
             
-            with tab5:
+            with tab3:
                 st.markdown("## Mergers & Acquisitions (Past 3 Years)")
                 st.markdown(sections['mergers_acquisitions'])
+            
+            with tab4:
+                st.markdown("## Recent News (Past 2 Years)")
+                st.markdown(sections['recent_news'])
+            
+            with tab5:
+                st.markdown("## Company Overview")
+                st.markdown(sections['company_overview'])
             
             # Download button
             battlecard_content = f"""# {company_name} Battlecard
 
 *Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
 
-## Company Overview
-{sections['company_overview']}
-
-## Recent News
-{sections['recent_news']}
-
 ## Leadership Changes (Past 2 Years)
 {sections['leadership_changes']}
 
 ## Mergers & Acquisitions (Past 3 Years)
 {sections['mergers_acquisitions']}
+
+## Recent News (Past 2 Years)
+{sections['recent_news']}
+
+## Company Overview
+{sections['company_overview']}
 """
             
             st.download_button(

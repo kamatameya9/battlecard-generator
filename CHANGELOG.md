@@ -241,3 +241,6 @@
 
 ### Changed
 - The Streamlit app now only prompts the user for a Google API key (not CSE ID) if all 5 environment keys are exhausted. Only the environment CSE ID is used for all requests, and the user is never asked for a CSE ID. 
+
+### Fixed
+- The Streamlit app now persists user input (company name and website) and auto-triggers the generation logic after rerun, ensuring a seamless experience when the user is prompted for a new API key after all 5 environment keys are exhausted. 

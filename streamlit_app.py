@@ -127,8 +127,8 @@ st.markdown("Generate comprehensive battlecards for any company using AI-powered
 # Sidebar for inputs
 with st.sidebar:
     st.header("Company Information")
-    company_name = st.text_input("Company Name", placeholder="e.g., Apple Inc.")
-    company_website = st.text_input("Company Website (Optional)", placeholder="e.g., apple.com", help="Leave empty for unrestricted search across all websites")
+    company_name = st.text_input("Company Name", value=st.session_state.get('company_name', ''), placeholder="e.g., Apple Inc.")
+    company_website = st.text_input("Company Website (Optional)", value=st.session_state.get('company_website', ''), placeholder="e.g., apple.com", help="Leave empty for unrestricted search across all websites")
     
     generate_button = st.button("🚀 Generate Battlecard", type="primary")
 
@@ -149,10 +149,14 @@ def get_google_creds():
     return keys, os.getenv('GOOGLE_CSE_ID')
 
 # Main content area
-if generate_button:
+if generate_button or st.session_state.get('auto_generate', False):
     if not company_name:
         st.error("Please enter a company name.")
     else:
+        # Persist input for rerun
+        st.session_state['company_name'] = company_name
+        st.session_state['company_website'] = company_website
+        st.session_state['auto_generate'] = False  # Reset after use
         # Validate environment variables first
         if not validate_environment():
             st.error("❌ Missing required API keys. Please check your Streamlit Cloud settings.")
@@ -172,6 +176,9 @@ if generate_button:
                 if user_api_key:
                     st.session_state['user_google_api_key'] = user_api_key
                     st.session_state['show_api_form'] = False
+                    st.session_state['auto_generate'] = True
+                    st.session_state['company_name'] = company_name
+                    st.session_state['company_website'] = company_website
                     st.rerun()
                 else:
                     st.error("API key is required.")

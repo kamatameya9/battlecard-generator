@@ -311,7 +311,7 @@ Twitter Description: {s['twitter_description']}".strip()
         for s in snippets if any([s['snippet'], s['og_description'], s['twitter_description']])
     ])
     payload = {
-        'model': 'llama3-70b-8192',
+        'model': 'llama-3.3-70b-versatile',
         'messages': [
             {'role': 'system', 'content': 'You are an expert business analyst.'},
             {'role': 'user', 'content': prompt + "\n\nSnippets:\n" + context}
